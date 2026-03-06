@@ -3,25 +3,33 @@
 import { ReactNode, useMemo, useState } from "react";
 
 type TabKey =
+  | "home"
   | "review-story-ticket"
   | "mobile-app-story-template"
   | "rebuild-existing-story"
   | "classify-bug-priority"
   | "bug-reported-so-far"
-  | "indiamart-bug-guidelines";
-type NavGroupKey = "mobile-app-story-ticket-development" | "product-bug-classifier" | "docs";
+  | "indiamart-bug-guidelines"
+  | "add-ticket-to-sprint";
+type NavGroupKey =
+  | "mobile-app-story-ticket-development"
+  | "product-bug-classifier"
+  | "docs"
+  | "sprint-task";
 type GenericRecord = Record<string, unknown>;
 
 const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": true,
   "product-bug-classifier": false,
   docs: false,
+  "sprint-task": false,
 };
 
 const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": false,
   "product-bug-classifier": false,
   docs: false,
+  "sprint-task": false,
 };
 
 const isRecord = (value: unknown): value is GenericRecord =>
@@ -687,7 +695,7 @@ export default function Home() {
     activityUrl: string;
   } | null>(null);
   const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>("review-story-ticket");
+  const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [openNavGroups, setOpenNavGroups] =
     useState<Record<NavGroupKey, boolean>>(DEFAULT_OPEN_NAV_GROUPS);
   const [savedOpenNavGroups, setSavedOpenNavGroups] = useState<Record<NavGroupKey, boolean> | null>(
@@ -898,6 +906,16 @@ export default function Home() {
         },
       ],
     },
+    {
+      key: "sprint-task",
+      label: "Sprint Task",
+      items: [
+        {
+          key: "add-ticket-to-sprint",
+          label: "Add Ticket To Sprint",
+        },
+      ],
+    },
   ];
 
   const normalizedReport = useMemo(() => {
@@ -973,7 +991,7 @@ export default function Home() {
       >
         <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
           {!isDrawerCollapsed && (
-            <span className="fw-bold text-primary">Story Ticket</span>
+            <span className="fw-bold text-primary">App Team Automations</span>
           )}
           <button
             type="button"
@@ -1046,14 +1064,149 @@ export default function Home() {
 
       <main className="flex-grow-1 p-4">
         <div className="w-100 mx-auto" style={{ maxWidth: "980px" }}>
-          {activeTab === "review-story-ticket" ? (
+          {activeTab === "home" ? (
+            <div className="d-grid gap-4">
+              <div
+                className="rounded-4 p-4 p-md-5 text-white shadow-sm"
+                style={{ backgroundColor: "#1f2a5a" }}
+              >
+                <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                  <div className="d-flex align-items-start gap-3">
+                    <span className="fs-3" aria-hidden="true">
+                      {"\u26A1"}
+                    </span>
+                    <div>
+                      <h1 className="h3 fw-bold mb-1 text-white">App Team Automations</h1>
+                      <p className="mb-0 text-white-50">Workflow Automation Hub</p>
+                    </div>
+                  </div>
+                  <span className="badge rounded-pill bg-light text-primary fs-6 px-3 py-2">
+                    5 Automations
+                  </span>
+                </div>
+              </div>
+
+              <div className="row g-4">
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCF1"} Mobile App Story Ticket Development</h2>
+                        <span className="badge bg-primary-subtle text-primary">3 Steps</span>
+                      </div>
+                      <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("mobile-app-story-template")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                            <div>
+                              <div className="fw-semibold">Mobile App Story Template</div>
+                              <div className="small text-muted">Generate story template for mobile app development</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("rebuild-existing-story")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
+                            <div>
+                              <div className="fw-semibold">Rebuild Existing Story</div>
+                              <div className="small text-muted">Reconstruct and rebuild an existing story ticket</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("review-story-ticket")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
+                            <div>
+                              <div className="fw-semibold">Review Story Ticket</div>
+                              <div className="small text-muted">Review and score your story ticket quality</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDC1B"} Product Bug Classifier</h2>
+                        <span className="badge bg-primary-subtle text-primary">2 Steps</span>
+                      </div>
+                      <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("classify-bug-priority")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                            <div>
+                              <div className="fw-semibold">Classify Bug Priority</div>
+                              <div className="small text-muted">Classify the priority level of a reported bug</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("bug-reported-so-far")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
+                            <div>
+                              <div className="fw-semibold">Bug Reported So Far</div>
+                              <div className="small text-muted">View all bugs reported across products</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCC4"} Documentation</h2>
+                        <span className="badge bg-primary-subtle text-primary">Docs</span>
+                      </div>
+                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("indiamart-bug-guidelines")}>
+                        <div className="d-flex gap-3">
+                          <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                          <div>
+                            <div className="fw-semibold">IndiaMART Bug Guidelines</div>
+                            <div className="small text-muted">Reference documentation for bug reporting standards</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\u2705"} Sprint Task</h2>
+                        <span className="badge bg-primary-subtle text-primary">1 Step</span>
+                      </div>
+                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
+                        <div className="d-flex gap-3">
+                          <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                          <div>
+                            <div className="fw-semibold">Add Ticket To Sprint</div>
+                            <div className="small text-muted">Add a work ticket to the current sprint</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "review-story-ticket" ? (
             <>
               <div
-                className="card shadow-lg p-5 text-center mx-auto mb-4"
-                style={{ maxWidth: "520px", width: "100%", borderRadius: "20px" }}
+                className="card shadow-lg p-4 p-md-5 mb-4"
+                style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
               >
-                <h1 className="mb-4 fw-bold text-primary">Review Story Ticket</h1>
-                <p className="text-muted mb-4">
+                <h1 className="mb-4 fw-bold text-primary text-center">Review Story Ticket</h1>
+                <p className="text-muted mb-4 text-center">
                   Enter your story ticket ID and generate a quality assessment report
                   instantly.
                 </p>
@@ -1339,7 +1492,7 @@ export default function Home() {
               className="card shadow-lg p-4 p-md-5"
               style={{ width: "100%", borderRadius: "20px" }}
             >
-              <h1 className="mb-4 fw-bold text-primary">Rebuild Existing Story</h1>
+              <h1 className="mb-4 fw-bold text-primary text-center">Rebuild Existing Story</h1>
 
               <div className="mb-3">
                 <label htmlFor="reconstruct-ticket-id" className="form-label fw-semibold">
@@ -1478,7 +1631,7 @@ export default function Home() {
               className="card shadow-lg p-4 p-md-5"
               style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
             >
-              <h1 className="mb-4 fw-bold text-primary">Mobile App Story Template</h1>
+              <h1 className="mb-4 fw-bold text-primary text-center">Mobile App Story Template</h1>
 
               <div className="accordion">
                 <div className="accordion-item">
@@ -2034,15 +2187,125 @@ export default function Home() {
               className="card shadow-lg p-5 text-center mx-auto"
               style={{ maxWidth: "520px", width: "100%", borderRadius: "20px" }}
             >
-              <h1 className="mb-3 fw-bold text-primary">Bug Reported So Far</h1>
+              <h1 className="mb-4 fw-bold text-primary text-center">Bug Reported So Far</h1>
               <p className="text-muted mb-0">This section is coming soon.</p>
+            </div>
+          ) : activeTab === "add-ticket-to-sprint" ? (
+            <div
+              className="card shadow-lg p-4 p-md-5"
+              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">Add Ticket To Sprint</h1>
+
+              <div className="card border shadow-sm">
+                <div className="card-body p-4 p-md-5">
+                  <div className="d-grid gap-3">
+                    <div className="border rounded-3 bg-light p-3">
+                      <div className="d-flex align-items-start gap-3">
+                        <span
+                          className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-semibold"
+                          style={{ width: "32px", height: "32px" }}
+                        >
+                          1
+                        </span>
+                        <div>
+                          <h2 className="h5 fw-bold mb-2">Step 1 - Open the Sprint Sheet</h2>
+                          <p className="mb-0">
+                            Access the sprint sheet here:{" "}
+                            <a
+                              href="https://docs.google.com/spreadsheets/d/1ZnlKpU3Bqqaxm4G7eHKc4zvO4VzQIjxxaXzDAEAFw7I/edit?gid=0#gid=0"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="link-primary text-decoration-underline"
+                            >
+                              {"\uD83D\uDD17"} Sprint Sheet
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border rounded-3 bg-light p-3">
+                      <div className="d-flex align-items-start gap-3">
+                        <span
+                          className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-semibold"
+                          style={{ width: "32px", height: "32px" }}
+                        >
+                          2
+                        </span>
+                        <div>
+                          <h2 className="h5 fw-bold mb-2">Step 2 - Enter the Ticket ID</h2>
+                          <p className="mb-0">
+                            Enter the ticket ID in the designated column. All information
+                            corresponding to that ticket, including its details and metadata, will
+                            automatically populate across the subsequent columns in the same row.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border rounded-3 bg-light p-3">
+                      <div className="d-flex align-items-start gap-3">
+                        <span
+                          className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-semibold"
+                          style={{ width: "32px", height: "32px" }}
+                        >
+                          3
+                        </span>
+                        <div>
+                          <h2 className="h5 fw-bold mb-2">Step 3 - Automatic Scoring</h2>
+                          <p className="mb-0">
+                            Once the ticket ID is entered, the ticket is also automatically scored.
+                            Detailed scoring information is computed and filled into the sheet
+                            without any manual input required.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border rounded-3 bg-light p-3">
+                      <div className="d-flex align-items-start gap-3">
+                        <span
+                          className="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-semibold"
+                          style={{ width: "32px", height: "32px" }}
+                        >
+                          +
+                        </span>
+                        <div>
+                          <h2 className="h5 fw-bold mb-2">Bonus - Refresh for Latest Data</h2>
+                          <p className="mb-0">
+                            To get the most up-to-date information for any ticket already in the
+                            sheet, click the refresh button located next to the ticket ID. This will
+                            re-fetch and overwrite the row with the latest content from the source.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <section className="mt-5">
+                <h2 className="h3 fw-bold text-primary text-center mb-4">Watch How It Works</h2>
+                <div className="mx-auto" style={{ maxWidth: "900px" }}>
+                  <iframe
+                    src="https://drive.google.com/file/d/1U82YUdK5EhsV6vt7hVmdcKbBjGjVtqfH/preview"
+                    width="100%"
+                    height="480"
+                    allow="autoplay"
+                    allowFullScreen
+                    className="rounded-4 shadow-sm border-0"
+                    title="Add Ticket To Sprint Demo Video"
+                  />
+                </div>
+              </section>
             </div>
           ) : (
             <div
               className="card shadow-lg p-4 p-md-5"
               style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
             >
-              <h1 className="mb-4 fw-bold text-primary">IndiaMART Bug Guidelines</h1>
+              <h1 className="mb-4 fw-bold text-primary text-center">IndiaMART Bug Guidelines</h1>
 
               <section className="mb-4 pb-4 border-bottom border-light-subtle">
                 <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
