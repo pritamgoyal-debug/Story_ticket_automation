@@ -10,41 +10,32 @@ type TabKey =
   | "classify-bug-priority"
   | "bug-reported-so-far"
   | "indiamart-bug-guidelines"
-  | "add-ticket-to-sprint"
   | "hp-mp-bugs-status"
   | "current-status"
   | "new-ticket"
-  | "create-build"
-  | "create-build-firebase"
-  | "create-build-playstore-internal"
-  | "create-build-playstore-beta"
-  | "create-build-playstore-production"
-  | "increase-rollout";
+  | "add-ticket-to-sprint";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
   | "product-bug-classifier"
-  | "docs"
-  | "sprint-task"
   | "product-bug-status"
-  | "android-build-automation";
+  | "docs"
+  | "sprint-task";
 type GenericRecord = Record<string, unknown>;
 
 const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": true,
   "product-bug-classifier": false,
+  "product-bug-status": false,
   docs: false,
   "sprint-task": false,
-  "product-bug-status": false,
-  "android-build-automation": false,
 };
 
 const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": false,
   "product-bug-classifier": false,
+  "product-bug-status": false,
   docs: false,
   "sprint-task": false,
-  "product-bug-status": false,
-  "android-build-automation": false,
 };
 
 const isRecord = (value: unknown): value is GenericRecord =>
@@ -318,7 +309,7 @@ const parseLines = (ticket: string): ParsedLine[] => {
       continue;
     }
 
-    const bulletMatch = line.match(/^(\s*)(?:[�*-]|•)\s+(.*)$/);
+    const bulletMatch = line.match(/^(\s*)(?:[ *-]|•)\s+(.*)$/);
     if (bulletMatch) {
       const indent = bulletMatch[1].replace(/\t/g, "    ").length;
       parsed.push({
@@ -722,7 +713,6 @@ export default function Home() {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(true);
   const [isBasicTemplateOpen, setIsBasicTemplateOpen] = useState(true);
   const [isBotTemplateOpen, setIsBotTemplateOpen] = useState(false);
-
   const [newTicketId, setNewTicketId] = useState("");
   const [newTicketLoading, setNewTicketLoading] = useState(false);
   const [newTicketError, setNewTicketError] = useState("");
@@ -878,7 +868,6 @@ export default function Home() {
       setClassifyLoading(false);
     }
   };
-
   const handleNewTicketSubmit = async () => {
     const trimmedId = newTicketId.trim();
     if (!trimmedId) {
@@ -956,26 +945,6 @@ export default function Home() {
       ],
     },
     {
-      key: "docs",
-      label: "Docs",
-      items: [
-        {
-          key: "indiamart-bug-guidelines",
-          label: "IndiaMART Bug Guidelines",
-        },
-      ],
-    },
-    {
-      key: "sprint-task",
-      label: "Sprint Task",
-      items: [
-        {
-          key: "add-ticket-to-sprint",
-          label: "Add Ticket To Sprint",
-        },
-      ],
-    },
-    {
       key: "product-bug-status",
       label: "Product Bug Status",
       items: [
@@ -994,32 +963,22 @@ export default function Home() {
       ],
     },
     {
-      key: "android-build-automation",
-      label: "Android Build Automation",
+      key: "docs",
+      label: "Docs",
       items: [
         {
-          key: "create-build",
-          label: "Create the build",
+          key: "indiamart-bug-guidelines",
+          label: "IndiaMART Bug Guidelines",
         },
+      ],
+    },
+    {
+      key: "sprint-task",
+      label: "Sprint Task",
+      items: [
         {
-          key: "create-build-firebase",
-          label: "Create the build & upload on firebase",
-        },
-        {
-          key: "create-build-playstore-internal",
-          label: "Create build & upload on playstore internal",
-        },
-        {
-          key: "create-build-playstore-beta",
-          label: "Create build & upload on playstore beta",
-        },
-        {
-          key: "create-build-playstore-production",
-          label: "Create build & upload on playstore production, default rollout 0.1%",
-        },
-        {
-          key: "increase-rollout",
-          label: "Increase rollout to 10%,50,99% on consecutive days",
+          key: "add-ticket-to-sprint",
+          label: "Add Ticket To Sprint",
         },
       ],
     },
@@ -1301,113 +1260,6 @@ export default function Home() {
                           </div>
                         </div>
                       </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-12 col-lg-6">
-                  <div className="card border shadow-sm h-100">
-                    <div className="card-body p-4">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDEA8"} Product Bug Status</h2>
-                        <span className="badge bg-primary-subtle text-primary">3 Steps</span>
-                      </div>
-                      <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
-                            <div>
-                              <div className="fw-semibold">HP+MP Product Bugs</div>
-                              <div className="small text-muted">Join Android and iOS spaces</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("current-status")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
-                            <div>
-                              <div className="fw-semibold">Current Release Status</div>
-                              <div className="small text-muted">Join the current release space</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("new-ticket")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
-                            <div>
-                              <div className="fw-semibold">Ticket Status</div>
-                              <div className="small text-muted">Check ticket classification status</div>
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-12 col-lg-6">
-                  <div className="card border shadow-sm h-100">
-                    <div className="card-body p-4">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDEE0\uFE0F"} Android Build Automation</h2>
-                        <span className="badge bg-primary-subtle text-primary">6 Steps</span>
-                      </div>
-                      <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("create-build")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
-                            <div>
-                              <div className="fw-semibold">Create the build</div>
-                              <div className="small text-muted">Generate a new build</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("create-build-firebase")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
-                            <div>
-                              <div className="fw-semibold">Firebase Upload</div>
-                              <div className="small text-muted">Create build & upload on Firebase</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("create-build-playstore-internal")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
-                            <div>
-                              <div className="fw-semibold">Playstore Internal</div>
-                              <div className="small text-muted">Create build & upload on Playstore Internal</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("create-build-playstore-beta")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>4</span>
-                            <div>
-                              <div className="fw-semibold">Playstore Beta</div>
-                              <div className="small text-muted">Create build & upload on Playstore Beta</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("create-build-playstore-production")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>5</span>
-                            <div>
-                              <div className="fw-semibold">Playstore Production</div>
-                              <div className="small text-muted">Rollout 0.1% defaults</div>
-                            </div>
-                          </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("increase-rollout")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>6</span>
-                            <div>
-                              <div className="fw-semibold">Increase Rollout</div>
-                              <div className="small text-muted">10%, 50%, 99% on consecutive days</div>
-                            </div>
-                          </div>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -2404,6 +2256,72 @@ export default function Home() {
               <h1 className="mb-4 fw-bold text-primary text-center">Bug Reported So Far</h1>
               <p className="text-muted mb-0">This section is coming soon.</p>
             </div>
+          ) : activeTab === "hp-mp-bugs-status" ? (
+            <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+              <h1 className="mb-4 fw-bold text-primary text-center">HP + MP Product Bugs Status Classification</h1>
+              <div className="card border shadow-sm p-4 text-center">
+                <p className="mb-4">Click below to join the respective spaces:</p>
+                <div className="d-flex flex-column flex-md-row justify-content-center gap-3">
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAAuMInwWc" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-flex align-items-center justify-content-center gap-2">
+                    <span>Android Space</span>
+                  </a>
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAAqBfN7_Y" target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                    <span>iOS Space</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "current-status" ? (
+            <div className="items-center justify-center p-4">
+              <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+                <h1 className="mb-4 fw-bold text-primary text-center">Current Release Status</h1>
+                <div className="card border shadow-sm p-4 text-center">
+                  <p className="mb-4">Click below to join the Current Release Space:</p>
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAA_eX6qK4" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center gap-2">
+                    <span>Current Release Space</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "new-ticket" ? (
+            <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+              <h1 className="mb-4 fw-bold text-primary text-center">Ticket Status</h1>
+              <div className="mb-4">
+                <label htmlFor="new-ticket-id" className="form-label fw-semibold">Enter Ticket ID</label>
+                <div className="input-group">
+                  <input
+                    id="new-ticket-id"
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Ticket ID"
+                    value={newTicketId}
+                    onChange={(e) => setNewTicketId(e.target.value)}
+                  />
+                  <button
+                    className="btn btn-primary d-flex align-items-center justify-content-center"
+                    onClick={handleNewTicketSubmit}
+                    disabled={newTicketLoading}
+                  >
+                    {newTicketLoading ? (
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                    ) : null}
+                    {newTicketLoading ? "Checking..." : "Check Status"}
+                  </button>
+                </div>
+                {newTicketError && <div className="text-danger mt-2 small">{newTicketError}</div>}
+              </div>
+
+              {!!newTicketResult && (
+                <div className="card border mt-4">
+                  <div className="card-header bg-light fw-bold">Ticket Status Response</div>
+                  <div className="card-body">
+                    <pre className="mb-0 text-wrap" style={{ whiteSpace: "pre-wrap" }}>
+                      {typeof newTicketResult === "string" ? newTicketResult : JSON.stringify(newTicketResult, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : activeTab === "add-ticket-to-sprint" ? (
             <div
               className="card shadow-lg p-4 p-md-5"
@@ -2513,226 +2431,6 @@ export default function Home() {
                   />
                 </div>
               </section>
-            </div>
-          ) : activeTab === "hp-mp-bugs-status" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">HP+MP Product Bugs</h1>
-              <p className="text-muted mb-4 text-center">
-                Join the dedicated spaces for Android and iOS bug tracking.
-              </p>
-              
-              <div className="d-grid gap-3">
-                <a
-                  href="https://chat.google.com/room/AAQAYfqC_ps?cls=4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline-primary d-inline-flex justify-content-center align-items-center py-3"
-                >
-                  Join Android Space
-                </a>
-                <a
-                  href="https://chat.google.com/room/AAQAmPeTxYo?cls=4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline-primary d-inline-flex justify-content-center align-items-center py-3"
-                >
-                  Join iOS Space
-                </a>
-              </div>
-            </div>
-          ) : activeTab === "current-status" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Current Release Status</h1>
-              <p className="text-muted mb-4 text-center">
-                Join our Google Space to stay updated on the current release status.
-              </p>
-              <div className="d-grid">
-                <a
-                  href="https://chat.google.com/room/AAQAr0RFrzQ?cls=4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-primary d-inline-flex justify-content-center align-items-center py-3"
-                >
-                  Join Release Space
-                </a>
-              </div>
-            </div>
-          ) : activeTab === "new-ticket" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Ticket Status</h1>
-              <p className="text-muted mb-4 text-center">
-                Enter your ticket ID to check its status.
-              </p>
-
-              <div className="mb-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter Ticket ID"
-                  value={newTicketId}
-                  onChange={(e) => setNewTicketId(e.target.value)}
-                />
-              </div>
-
-              <div className="d-grid">
-                <button
-                  className="btn btn-primary d-flex justify-content-center align-items-center py-2"
-                  onClick={handleNewTicketSubmit}
-                  disabled={newTicketLoading}
-                >
-                  {newTicketLoading && (
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true"
-                    />
-                  )}
-                  {newTicketLoading ? "Checking Status..." : "Check Status"}
-                </button>
-              </div>
-
-              {newTicketError && (
-                <div className="alert alert-danger mt-3 mb-0" role="alert">
-                  {newTicketError}
-                </div>
-              )}
-{newTicketResult !== null && (
-  <div className="card border mt-4 text-start">
-    <div className="card-body">
-      {(() => {
-        const rawResult = newTicketResult as Record<string, unknown>;
-        const unwrappedResult = Array.isArray(rawResult)
-          ? (rawResult[0] as Record<string, unknown>)
-          : rawResult;
-
-        let ticketData: Record<string, unknown> | null = null;
-        if (unwrappedResult) {
-          if (unwrappedResult.ticket) {
-            ticketData = unwrappedResult.ticket as Record<string, unknown>;
-          } else {
-            ticketData = unwrappedResult;
-          }
-        }
-
-        if (ticketData) {
-          return (
-            <div>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3 className="h5 mb-0 fw-bold">
-                  Ticket #{String(ticketData.ticket_id ?? "")}
-                </h3>
-                <span
-                  className={`badge ${
-                    ticketData.bifurcation_status === "Not Acknowledged"
-                      ? "bg-warning text-dark"
-                      : "bg-info"
-                  }`}
-                >
-                  {String(ticketData.bifurcation_status ?? "")}
-                </span>
-              </div>
-
-              <p className="mb-2">
-                <strong>Confidence Score:</strong>{" "}
-                <span className="badge bg-secondary">
-                  {String(ticketData.confidence_score ?? "")}
-                </span>
-              </p>
-
-              <p className="mb-2">
-                <strong>Bifurcation Justification:</strong>
-              </p>
-              <div className="p-3 bg-light rounded mb-3 border">
-                {String(ticketData.Bifurcation_justification ?? "")}
-              </div>
-
-              <p className="mb-2">
-                <strong>AI Summary:</strong>
-              </p>
-              <div
-                className="p-3 bg-light rounded border"
-                style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-              >
-                {String(ticketData["AI Summary"] ?? "")}
-              </div>
-            </div>
-          );
-        }
-
-        const displayOutput =
-          typeof newTicketResult === "string"
-            ? newTicketResult
-            : JSON.stringify(newTicketResult, null, 2);
-
-        return (
-          <pre
-            className="mb-0 text-muted"
-            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-          >
-            {displayOutput}
-          </pre>
-        );
-      })()}
-    </div>
-  </div>
-)}
-            </div>
-          ) : activeTab === "create-build" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Create the build</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
-            </div>
-          ) : activeTab === "create-build-firebase" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Create the build & upload on firebase</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
-            </div>
-          ) : activeTab === "create-build-playstore-internal" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Create build & upload on playstore internal</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
-            </div>
-          ) : activeTab === "create-build-playstore-beta" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Create build & upload on playstore beta</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
-            </div>
-          ) : activeTab === "create-build-playstore-production" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Create build & upload on playstore production, default rollout 0.1%</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
-            </div>
-          ) : activeTab === "increase-rollout" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Increase rollout to 10%,50,99% on consecutive days</h1>
-              <p className="text-muted text-center">Implementation under construction.</p>
             </div>
           ) : (
             <div
