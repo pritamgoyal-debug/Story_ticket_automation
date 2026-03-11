@@ -1178,6 +1178,11 @@ export default function Home() {
         style={{
           width: isDrawerCollapsed ? "88px" : "260px",
           transition: "width 0.25s ease",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflowY: "auto",
+          flexShrink: 0,
         }}
       >
         <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
@@ -1219,10 +1224,17 @@ export default function Home() {
                   type="button"
                   className="btn btn-light w-100 text-start d-flex align-items-center justify-content-between fw-semibold"
                   onClick={() =>
-                    setOpenNavGroups((prev) => ({
-                      ...prev,
-                      [group.key]: !prev[group.key],
-                    }))
+                    setOpenNavGroups((prev) => {
+                      const isCurrentlyOpen = prev[group.key];
+                      // If it's already open, just close it. Otherwise, close all and open this one.
+                      if (isCurrentlyOpen) {
+                        return { ...prev, [group.key]: false };
+                      }
+                      const allClosed = Object.fromEntries(
+                        Object.keys(prev).map((k) => [k, false])
+                      ) as Record<NavGroupKey, boolean>;
+                      return { ...allClosed, [group.key]: true };
+                    })
                   }
                 >
                   <span>{isDrawerCollapsed ? group.label.split(" ")[0] : group.label}</span>
@@ -2459,9 +2471,11 @@ export default function Home() {
                 <h1 className="mb-4 fw-bold text-primary text-center">Current Release Status</h1>
                 <div className="card border shadow-sm p-4 text-center">
                   <p className="mb-4">Click below to join the Current Release Space:</p>
-                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAA_eX6qK4" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center gap-2">
-                    <span>Current Release Space</span>
-                  </a>
+                  <div className="d-flex justify-content-center">
+                    <a href="https://mail.google.com/chat/u/0/#chat/space/AAAA_eX6qK4" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
+                      <span>Current Release Space</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
