@@ -62,6 +62,10 @@ export default function BuildAutomationPage() {
     success: boolean;
     message: string;
   } | null>(null);
+  const [pipelineStatus, setPipelineStatus] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const [artifactJobId, setArtifactJobId] = useState<number | null>(null);
+  const [pipelineUrl, setPipelineUrl] = useState<string | null>(null);
 
   // Check if already logged in
   useEffect(() => {
@@ -96,6 +100,82 @@ export default function BuildAutomationPage() {
     setToken("");
   };
 
+  const getPollingDelay = (actionId: number | null): number => {
+    if (actionId === 1) return 0; // Version code change — poll immediately
+    return 10 * 60 * 1000; // All other actions — 10 min
+  };
+
+  const pollPipelineStatus = (pipelineId: number, actionId: number | null) => {
+    setPolling(true);
+    setPipelineStatus("running");
+    setArtifactJobId(null);
+
+    const startTime = Date.now();
+    const TIMEOUT = 30 * 60 * 1000; // Stop after 30 minutes
+
+    const poll = async () => {
+      if (Date.now() - startTime >= TIMEOUT) {
+        setPolling(false);
+        setPipelineStatus("timeout");
+        setResult({
+          success: false,
+          message: `Pipeline did not complete within 30 minutes. Pipeline ID: ${pipelineId}`,
+        });
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/pipeline?pipelineId=${pipelineId}`);
+        if (!res.ok) {
+          setPolling(false);
+          setPipelineStatus("error");
+          setResult({
+            success: false,
+            message: `Could not fetch pipeline status (${res.status}).`,
+          });
+          return;
+        }
+
+        const data = await res.json();
+        setPipelineStatus(data.status);
+
+        if (data.status === "success") {
+          setPolling(false);
+          if (data.artifactJobId) {
+            setArtifactJobId(data.artifactJobId);
+          }
+          setResult({
+            success: true,
+            message: `Pipeline completed successfully! Pipeline ID: ${pipelineId}`,
+          });
+          return;
+        }
+
+        if (data.status === "failed" || data.status === "canceled" || data.status === "skipped") {
+          setPolling(false);
+          setResult({
+            success: false,
+            message: `Pipeline ${data.status}. Pipeline ID: ${pipelineId}`,
+          });
+          return;
+        }
+
+        // Still running — poll again in 60 seconds
+        setTimeout(poll, 60000);
+      } catch {
+        setPolling(false);
+        setPipelineStatus("error");
+      }
+    };
+
+    const delay = getPollingDelay(actionId);
+    if (delay === 0) {
+      poll();
+    } else {
+      setTimeout(poll, delay);
+    }
+  };
+
   const handleTriggerPipeline = async () => {
     if (!token.trim()) {
       setResult({ success: false, message: "Please enter your pipeline token." });
@@ -127,6 +207,9 @@ export default function BuildAutomationPage() {
 
     setLoading(true);
     setResult(null);
+    setPipelineStatus(null);
+    setArtifactJobId(null);
+    setPipelineUrl(null);
 
     try {
       const formData = new FormData();
@@ -152,11 +235,26 @@ export default function BuildAutomationPage() {
       console.log(response)
       if (response.ok) {
         const data = await response.json();
-        console.log(data)
+        console.log(data);
         setResult({
           success: true,
-          message: `Pipeline triggered successfully! Pipeline ID: ${data.id ?? "N/A"}, Status: ${data.status ?? "created"}`,
+          message: `Pipeline triggered successfully! Pipeline ID: ${data.id ?? "N/A"}. ${
+            selectedAction === 1
+              ? "Checking status now..."
+              : "Polling will start in 10 minutes..."
+          }`,
         });
+        // Set pipeline URL for navigation
+        if (data.web_url) {
+          setPipelineUrl(data.web_url);
+        } else if (data.id) {
+          setPipelineUrl(`https://scm.intermesh.net/projects/624/-/pipelines/${data.id}`);
+        }
+
+        // Start polling for all actions
+        if (data.id) {
+          pollPipelineStatus(data.id, selectedAction);
+        }
       } else {
         const errorText = await response.text();
         setResult({
@@ -406,6 +504,79 @@ export default function BuildAutomationPage() {
             style={{ borderRadius: 10 }}
           >
             {result.message}
+          </div>
+        )}
+
+        {/* Pipeline Status Tracker */}
+        {pipelineStatus && (
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 12, background: "#fff" }}>
+            <div className="card-body p-4">
+              <h6 className="fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                Pipeline Progress
+              </h6>
+              <div className="d-flex align-items-center gap-3 mb-3">
+                {polling && (
+                  <span className="spinner-border spinner-border-sm text-primary" role="status" />
+                )}
+                <span
+                  className="badge px-3 py-2"
+                  style={{
+                    fontSize: 13,
+                    background:
+                      pipelineStatus === "success"
+                        ? "#22c55e"
+                        : pipelineStatus === "failed" || pipelineStatus === "canceled" || pipelineStatus === "timeout"
+                        ? "#ef4444"
+                        : pipelineStatus === "running"
+                        ? "#3b82f6"
+                        : "#f59e0b",
+                    color: "#fff",
+                  }}
+                >
+                  {pipelineStatus.charAt(0).toUpperCase() + pipelineStatus.slice(1)}
+                </span>
+                {polling && (
+                  <small className="text-muted">
+                    {pipelineStatus === "running"
+                      ? "Checking every 60 seconds..."
+                      : "Waiting to start polling..."}
+                  </small>
+                )}
+                {pipelineUrl && (
+                  <a
+                    href={pipelineUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm btn-outline-primary ms-auto"
+                    style={{ borderRadius: 6 }}
+                  >
+                    View Pipeline on GitLab
+                  </a>
+                )}
+              </div>
+
+              {/* Download button when build_apk succeeds with artifacts */}
+              {pipelineStatus === "success" && artifactJobId && selectedAction === 2 && (
+                <a
+                  href={`/api/artifact?jobId=${artifactJobId}`}
+                  className="btn text-white fw-semibold px-4"
+                  style={{
+                    background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                    border: "none",
+                    borderRadius: 8,
+                  }}
+                  download
+                >
+                  Download APK Artifacts
+                </a>
+              )}
+
+              {pipelineStatus === "success" && !artifactJobId && selectedAction === 2 && (
+                <p className="text-muted small mb-0">
+                  Pipeline completed but no downloadable artifacts were found.
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
