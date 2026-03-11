@@ -7,11 +7,9 @@ type TabKey =
   | "review-story-ticket"
   | "mobile-app-story-template"
   | "rebuild-existing-story"
-  | "watch-how-it-works-bug-classifier"
   | "classify-bug-priority"
   | "bug-reported-so-far"
   | "indiamart-bug-guidelines"
-  | "watch-how-it-works-sprint"
   | "add-ticket-to-sprint";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
@@ -864,7 +862,7 @@ export default function Home() {
   const navGroups: Array<{
     key: NavGroupKey;
     label: string;
-    items: Array<{ key: TabKey; label: string; showNumber?: boolean; emphasize?: boolean }>;
+    items: Array<{ key: TabKey; label: string }>;
   }> = [
     {
       key: "mobile-app-story-ticket-development",
@@ -889,12 +887,6 @@ export default function Home() {
       label: "Product Bug Classifier",
       items: [
         {
-          key: "watch-how-it-works-bug-classifier",
-          label: "Watch How It Works",
-          showNumber: false,
-          emphasize: true,
-        },
-        {
           key: "classify-bug-priority",
           label: "Classify Bug Priority",
         },
@@ -918,12 +910,6 @@ export default function Home() {
       key: "sprint-task",
       label: "Sprint Task",
       items: [
-        {
-          key: "watch-how-it-works-sprint",
-          label: "Watch How It Works",
-          showNumber: false,
-          emphasize: true,
-        },
         {
           key: "add-ticket-to-sprint",
           label: "Add Ticket To Sprint",
@@ -994,27 +980,6 @@ export default function Home() {
     return "bg-primary";
   };
 
-  const videoContainerStyle = {
-    position: "relative" as const,
-    width: "100%",
-    maxWidth: "900px",
-    margin: "0 auto",
-    paddingBottom: "56.25%",
-    height: 0,
-    overflow: "hidden",
-    borderRadius: "12px",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-  };
-
-  const videoIframeStyle = {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    border: "none",
-  };
-
   return (
     <div className="d-flex min-vh-100 bg-light">
       <aside
@@ -1075,11 +1040,7 @@ export default function Home() {
 
                 {!isDrawerCollapsed && isGroupOpen && (
                   <div className="d-grid gap-2 p-2 pt-1">
-                    {group.items.map((item, index) => {
-                      const numberedIndex = group.items
-                        .slice(0, index + 1)
-                        .filter((candidate) => candidate.showNumber !== false).length;
-                      return (
+                    {group.items.map((item, index) => (
                       <button
                         key={item.key}
                         type="button"
@@ -1088,14 +1049,11 @@ export default function Home() {
                         }`}
                         onClick={() => setActiveTab(item.key)}
                       >
-                        <span className={item.emphasize ? "fw-bold fst-italic" : undefined}>
-                          {item.showNumber === false
-                            ? item.label
-                            : `${numberedIndex}. ${item.label}`}
-                        </span>
+                        {isDrawerCollapsed
+                          ? `${index + 1}.`
+                          : `${index + 1}. ${item.label}`}
                       </button>
-                      );
-                    })}
+                    ))}
                   </div>
                 )}
               </div>
@@ -1177,12 +1135,6 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">2 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("watch-how-it-works-bug-classifier")}>
-                          <div>
-                            <div className="fw-bold fst-italic">Watch How It Works</div>
-                            <div className="small text-muted">See how the bug classifier works in action</div>
-                          </div>
-                        </button>
                         <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("classify-bug-priority")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
@@ -1233,23 +1185,15 @@ export default function Home() {
                         <h2 className="h5 fw-bold mb-0">{"\u2705"} Sprint Task</h2>
                         <span className="badge bg-primary-subtle text-primary">1 Step</span>
                       </div>
-                      <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("watch-how-it-works-sprint")}>
+                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
+                        <div className="d-flex gap-3">
+                          <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                           <div>
-                            <div className="fw-bold fst-italic">Watch How It Works</div>
-                            <div className="small text-muted">See how the sprint automation works in action</div>
+                            <div className="fw-semibold">Add Ticket To Sprint</div>
+                            <div className="small text-muted">Add a work ticket to the current sprint</div>
                           </div>
-                        </button>
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
-                          <div className="d-flex gap-3">
-                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
-                            <div>
-                              <div className="fw-semibold">Add Ticket To Sprint</div>
-                              <div className="small text-muted">Add a work ticket to the current sprint</div>
-                            </div>
-                          </div>
-                        </button>
-                      </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1811,43 +1755,43 @@ export default function Home() {
                               <tr>
                                 <td>Webview Load Time (Product Details)</td>
                                 <td>Primary</td>
-                                <td><strong><em>X ms</em></strong></td>
-                                <td><strong><em>Y ms</em></strong> (reduction)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X ms</td>
+                                <td>Y ms (reduction)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Crash-Free Rate (Manage Products Module)</td>
                                 <td>Primary</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td><strong><em>Y%</em></strong> (increase)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X%</td>
+                                <td>Y% (increase)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Seller Adoption Rate (Webview Path)</td>
                                 <td>Secondary</td>
-                                <td><strong><em>N/A</em></strong> (new path)</td>
-                                <td><strong><em>X%</em></strong> of sellers viewing product details</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>N/A (new path)</td>
+                                <td>X% of sellers viewing product details</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>API Error Rate (Product Details Webview)</td>
                                 <td>Secondary</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td><strong><em>Y%</em></strong> (reduction)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X%</td>
+                                <td>Y% (reduction)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Overall App Crash Rate</td>
                                 <td>Guardrail</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td>Maintain below <strong><em>Y%</em></strong></td>
+                                <td>X%</td>
+                                <td>Maintain below Y%</td>
                                 <td>Continuous</td>
                               </tr>
                               <tr>
                                 <td>Negative Reviews (related to product management)</td>
                                 <td>Guardrail</td>
-                                <td><strong><em>X reviews/week</em></strong></td>
-                                <td>Maintain below <strong><em>Y reviews/week</em></strong></td>
+                                <td>X reviews/week</td>
+                                <td>Maintain below Y reviews/week</td>
                                 <td>Continuous</td>
                               </tr>
                             </tbody>
@@ -1911,13 +1855,11 @@ export default function Home() {
                         <h3 className="h5 fw-bold mb-2">Business Goal</h3>
                         <p className="mb-2 ps-3">
                           Business Objective: Improve release velocity for seller-facing features in
-                          the Manage Products module by <strong><em>X%</em></strong> within{" "}
-                          <strong><em>Y quarters</em></strong>.
+                          the Manage Products module by X% within Y quarters.
                         </p>
                         <p className="mb-0 ps-3">
                           Company OKR / Strategic Pillar: O2: Modernize Seller Tech Stack -&gt; KR:
-                          Reduce average feature release cycle for seller tools by{" "}
-                          <strong><em>Z days</em></strong>.
+                          Reduce average feature release cycle for seller tools by Z days.
                         </p>
                       </div>
 
@@ -1945,9 +1887,8 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-3">
                           Supporting Data: Average time to deploy a new feature or bug fix in the
-                          native Manage Products module is <strong><em>X days</em></strong>.{" "}
-                          <strong><em>Y%</em></strong> of seller-facing features are delayed due to
-                          app release cycles. <strong><em>Z%</em></strong> of support tickets relate to
+                          native Manage Products module is X days. Y% of seller-facing features are
+                          delayed due to app release cycles. Z% of support tickets relate to
                           inconsistencies between web and app seller tools.
                         </p>
                         <p className="mb-2 ps-3">
@@ -1956,10 +1897,9 @@ export default function Home() {
                           potential seller dissatisfaction due to outdated app functionalities.
                         </p>
                         <p className="mb-0 ps-3">
-                          Opportunity Size: Accelerating feature delivery by{" "}
-                          <strong><em>X%</em></strong> for the Manage Products module could lead to a{" "}
-                          <strong><em>Y%</em></strong> increase in seller engagement with product
-                          listings and a <strong><em>Z%</em></strong> reduction in development cycles.
+                          Opportunity Size: Accelerating feature delivery by X% for the Manage
+                          Products module could lead to a Y% increase in seller engagement with
+                          product listings and a Z% reduction in development cycles.
                         </p>
                       </div>
 
@@ -1994,7 +1934,7 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-4">
                           Slow API response: Display a loading spinner/skeleton UI within the
-                          Webview. Timeout after <strong><em>X seconds</em></strong> and show an error.
+                          Webview. Timeout after X seconds and show an error.
                         </p>
                         <p className="mb-2 ps-4">
                           Empty state: If product details API returns no data, display a &quot;Product
@@ -2005,7 +1945,7 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-4">
                           Android OS compatibility: Ensure Webview functions correctly on Android OS
-                          versions <strong><em>X</em></strong> and above.
+                          versions X and above.
                         </p>
                         <p className="mb-0 ps-4">
                           Backward compatibility: Ensure existing native product list view continues
@@ -2030,7 +1970,7 @@ export default function Home() {
                                 <td>
                                   Given the seller is on the &quot;My Products&quot; list. When the seller
                                   taps on a product. Then the Webview loads and displays the
-                                  read-only product details within <strong><em>X seconds</em></strong>.
+                                  read-only product details within X seconds.
                                 </td>
                                 <td>Functional</td>
                               </tr>
@@ -2055,8 +1995,8 @@ export default function Home() {
                                 <td>Performance: Webview Load Time</td>
                                 <td>
                                   Given the seller taps on a product. When the Webview loads the
-                                  product details. Then the content should be visible within{" "}
-                                  <strong><em>X ms</em></strong> on a 3G network.
+                                  product details. Then the content should be visible within X ms on
+                                  a 3G network.
                                 </td>
                                 <td>Performance</td>
                               </tr>
@@ -2072,7 +2012,7 @@ export default function Home() {
                               <tr>
                                 <td>Android Specific: OS Compatibility</td>
                                 <td>
-                                  Given the app is installed on Android <strong><em>X to Y</em></strong>. When the Webview
+                                  Given the app is installed on Android X to Y. When the Webview
                                   loads product details. Then the Webview should render correctly
                                   without UI glitches or crashes.
                                 </td>
@@ -2081,7 +2021,7 @@ export default function Home() {
                               <tr>
                                 <td>Android Specific: Crash-Free</td>
                                 <td>
-                                  Given the Webview is in use for <strong><em>Z minutes</em></strong>. When various
+                                  Given the Webview is in use for Z minutes. When various
                                   interactions occur. Then the app should remain crash-free.
                                 </td>
                                 <td>Stability</td>
@@ -2108,43 +2048,43 @@ export default function Home() {
                               <tr>
                                 <td>Webview Load Time (Product Details)</td>
                                 <td>Primary</td>
-                                <td><strong><em>X ms</em></strong></td>
-                                <td><strong><em>Y ms</em></strong> (reduction)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X ms</td>
+                                <td>Y ms (reduction)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Crash-Free Rate (Manage Products Module)</td>
                                 <td>Primary</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td><strong><em>Y%</em></strong> (increase)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X%</td>
+                                <td>Y% (increase)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Seller Adoption Rate (Webview Path)</td>
                                 <td>Secondary</td>
-                                <td><strong><em>N/A</em></strong> (new path)</td>
-                                <td><strong><em>X%</em></strong> of sellers viewing product details</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>N/A (new path)</td>
+                                <td>X% of sellers viewing product details</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>API Error Rate (Product Details Webview)</td>
                                 <td>Secondary</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td><strong><em>Y%</em></strong> (reduction)</td>
-                                <td><strong><em>Z days</em></strong> post-launch</td>
+                                <td>X%</td>
+                                <td>Y% (reduction)</td>
+                                <td>Z days post-launch</td>
                               </tr>
                               <tr>
                                 <td>Overall App Crash Rate</td>
                                 <td>Guardrail</td>
-                                <td><strong><em>X%</em></strong></td>
-                                <td>Maintain below <strong><em>Y%</em></strong></td>
+                                <td>X%</td>
+                                <td>Maintain below Y%</td>
                                 <td>Continuous</td>
                               </tr>
                               <tr>
                                 <td>Negative Reviews (related to product management)</td>
                                 <td>Guardrail</td>
-                                <td><strong><em>X reviews/week</em></strong></td>
-                                <td>Maintain below <strong><em>Y reviews/week</em></strong></td>
+                                <td>X reviews/week</td>
+                                <td>Maintain below Y reviews/week</td>
                                 <td>Continuous</td>
                               </tr>
                             </tbody>
@@ -2204,9 +2144,8 @@ export default function Home() {
                           Variant Group: Sees the new Webview for product details.
                         </p>
                         <p className="mb-2 ps-3">
-                          Experiment success trigger metric: Maintain crash-free rate above{" "}
-                          <strong><em>X%</em></strong> and Webview load time below{" "}
-                          <strong><em>Y ms</em></strong> for the variant group.
+                          Experiment success trigger metric: Maintain crash-free rate above X% and
+                          Webview load time below Y ms for the variant group.
                         </p>
                         <p className="mb-0 ps-3">
                           Rollback: Setting enable_product_details_webview remote config key to false
@@ -2250,37 +2189,6 @@ export default function Home() {
             >
               <h1 className="mb-4 fw-bold text-primary text-center">Bug Reported So Far</h1>
               <p className="text-muted mb-0">This section is coming soon.</p>
-            </div>
-          ) : activeTab === "watch-how-it-works-bug-classifier" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Watch How It Works</h1>
-              <div style={videoContainerStyle}>
-                <iframe
-                  src="https://drive.google.com/file/d/1fOt4JOMdhNIUNgG3x1xy0mSFcVPO9h0Y/preview"
-                  allowFullScreen
-                  style={videoIframeStyle}
-                  title="Bug classifier walkthrough"
-                />
-              </div>
-            </div>
-          ) : activeTab === "watch-how-it-works-sprint" ? (
-            <div
-              className="card shadow-lg p-4 p-md-5"
-              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Watch How It Works</h1>
-              <div style={videoContainerStyle}>
-                <iframe
-                  src="https://drive.google.com/file/d/1U82YUdK5EhsV6vt7hVmdcKbBjGjVtqfH/preview"
-                  allow="autoplay"
-                  allowFullScreen
-                  style={videoIframeStyle}
-                  title="Sprint workflow walkthrough"
-                />
-              </div>
             </div>
           ) : activeTab === "add-ticket-to-sprint" ? (
             <div
@@ -2376,6 +2284,21 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              <section className="mt-5">
+                <h2 className="h3 fw-bold text-primary text-center mb-4">Watch How It Works</h2>
+                <div className="mx-auto" style={{ maxWidth: "900px" }}>
+                  <iframe
+                    src="https://drive.google.com/file/d/1U82YUdK5EhsV6vt7hVmdcKbBjGjVtqfH/preview"
+                    width="100%"
+                    height="480"
+                    allow="autoplay"
+                    allowFullScreen
+                    className="rounded-4 shadow-sm border-0"
+                    title="Add Ticket To Sprint Demo Video"
+                  />
+                </div>
+              </section>
             </div>
           ) : (
             <div
