@@ -7,12 +7,14 @@ type TabKey =
   | "review-story-ticket"
   | "mobile-app-story-template"
   | "rebuild-existing-story"
+  | "watch-how-it-works-bug-classifier"
   | "classify-bug-priority"
   | "bug-reported-so-far"
   | "indiamart-bug-guidelines"
   | "hp-mp-bugs-status"
   | "current-status"
   | "new-ticket"
+  | "watch-how-it-works-sprint"
   | "add-ticket-to-sprint";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
@@ -309,7 +311,7 @@ const parseLines = (ticket: string): ParsedLine[] => {
       continue;
     }
 
-    const bulletMatch = line.match(/^(\s*)(?:[ *-]|•)\s+(.*)$/);
+    const bulletMatch = line.match(/^(\s*)(?:[�*-]|•)\s+(.*)$/);
     if (bulletMatch) {
       const indent = bulletMatch[1].replace(/\t/g, "    ").length;
       parsed.push({
@@ -682,6 +684,95 @@ const unwrapWebhookPayload = (value: unknown): unknown => {
   return parsed;
 };
 
+const renderNewTicketResult = (result: unknown): ReactNode => {
+  if (!result) return null;
+
+  if (typeof result === "string") {
+    return (
+      <div className="alert alert-info border-0 shadow-sm">
+        <div className="d-flex align-items-center gap-2">
+          <span>{"\u2139\uFE0F"}</span>
+          <div>{result}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const data = isRecord(result) ? result : {};
+
+
+  // Extract fields with flexible naming (matching exact webhook keys)
+  const ticketId = asText(data.ticket_id || data.ticketId || data.id || "N/A");
+  const bifurcationStatus = asText(data.bifurcation_status || data.bifurcationStatus || data.status || "N/A");
+  const confidenceScore = asText(data.confidence_score || data.confidenceScore || data.confidence || "N/A");
+  const bifurcationJustification = asText(
+    data.Bifurcation_justification ||
+    data.bifurcation_justification ||
+    data.bifurcationJustification ||
+    data.justification ||
+    "N/A"
+  );
+  const aiSummary = asText(
+    (data as Record<string, unknown>)["AI Summary"] ||
+    data.ai_summary ||
+    data.aiSummary ||
+    data.summary ||
+    "N/A"
+  );
+
+  return (
+    <div className="d-grid gap-3">
+      {/* Row 1: Ticket ID and Bifurcation Status */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex flex-column">
+            <span className="text-muted small fw-semibold text-uppercase">Ticket ID</span>
+            <span className="h5 mb-0 fw-bold text-dark">{ticketId}</span>
+          </div>
+          <div className="card bg-primary text-white border-0 shadow-sm px-4 py-2" style={{ borderRadius: "10px" }}>
+            <div className="small text-white-50 text-uppercase fw-bold" style={{ fontSize: "0.7rem" }}>Bifurcation Status</div>
+            <div className="fw-bold">{bifurcationStatus}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Confidence Score */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-1">Confidence Score</span>
+          <div className="d-flex align-items-center gap-2">
+            <div className="progress flex-grow-1" style={{ height: "8px" }}>
+              <div 
+                className="progress-bar bg-success" 
+                role="progressbar" 
+                style={{ width: confidenceScore.includes("%") ? confidenceScore : `${parseFloat(confidenceScore) * 100}%` }}
+              ></div>
+            </div>
+            <span className="fw-bold text-success">{confidenceScore}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Bifurcation Justification */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-2">Bifurcation Justification</span>
+          <p className="mb-0 text-dark lh-base">{bifurcationJustification}</p>
+        </div>
+      </div>
+
+      {/* Row 4: AI Summary */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-2">AI Summary</span>
+          <p className="mb-0 text-dark lh-base">{aiSummary}</p>
+        </div>
+      </div>
+     
+    </div>
+  );
+};
+
 export default function Home() {
   const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -868,6 +959,7 @@ export default function Home() {
       setClassifyLoading(false);
     }
   };
+
   const handleNewTicketSubmit = async () => {
     const trimmedId = newTicketId.trim();
     if (!trimmedId) {
@@ -910,7 +1002,7 @@ export default function Home() {
   const navGroups: Array<{
     key: NavGroupKey;
     label: string;
-    items: Array<{ key: TabKey; label: string }>;
+    items: Array<{ key: TabKey; label: string; showNumber?: boolean; emphasize?: boolean }>;
   }> = [
     {
       key: "mobile-app-story-ticket-development",
@@ -935,6 +1027,12 @@ export default function Home() {
       label: "Product Bug Classifier",
       items: [
         {
+          key: "watch-how-it-works-bug-classifier",
+          label: "Watch How It Works",
+          showNumber: false,
+          emphasize: true,
+        },
+        {
           key: "classify-bug-priority",
           label: "Classify Bug Priority",
         },
@@ -950,11 +1048,11 @@ export default function Home() {
       items: [
         {
           key: "hp-mp-bugs-status",
-          label: "HP+MP Product Bugs",
+          label: "HP + MP Bugs Status Classification",
         },
         {
           key: "current-status",
-          label: "Current Release Status",
+          label: "Current Release Bugs Classification",
         },
         {
           key: "new-ticket",
@@ -976,6 +1074,12 @@ export default function Home() {
       key: "sprint-task",
       label: "Sprint Task",
       items: [
+        {
+          key: "watch-how-it-works-sprint",
+          label: "Watch How It Works",
+          showNumber: false,
+          emphasize: true,
+        },
         {
           key: "add-ticket-to-sprint",
           label: "Add Ticket To Sprint",
@@ -1046,6 +1150,27 @@ export default function Home() {
     return "bg-primary";
   };
 
+  const videoContainerStyle = {
+    position: "relative" as const,
+    width: "100%",
+    maxWidth: "900px",
+    margin: "0 auto",
+    paddingBottom: "56.25%",
+    height: 0,
+    overflow: "hidden",
+    borderRadius: "12px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+  };
+
+  const videoIframeStyle = {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    border: "none",
+  };
+
   return (
     <div className="d-flex min-vh-100 bg-light">
       <aside
@@ -1106,7 +1231,11 @@ export default function Home() {
 
                 {!isDrawerCollapsed && isGroupOpen && (
                   <div className="d-grid gap-2 p-2 pt-1">
-                    {group.items.map((item, index) => (
+                    {group.items.map((item, index) => {
+                      const numberedIndex = group.items
+                        .slice(0, index + 1)
+                        .filter((candidate) => candidate.showNumber !== false).length;
+                      return (
                       <button
                         key={item.key}
                         type="button"
@@ -1115,11 +1244,14 @@ export default function Home() {
                         }`}
                         onClick={() => setActiveTab(item.key)}
                       >
-                        {isDrawerCollapsed
-                          ? `${index + 1}.`
-                          : `${index + 1}. ${item.label}`}
+                        <span className={item.emphasize ? "fw-bold fst-italic" : undefined}>
+                          {item.showNumber === false
+                            ? item.label
+                            : `${numberedIndex}. ${item.label}`}
+                        </span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1201,6 +1333,12 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">2 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("watch-how-it-works-bug-classifier")}>
+                          <div>
+                            <div className="fw-bold fst-italic">Watch How It Works</div>
+                            <div className="small text-muted">See how the bug classifier works in action</div>
+                          </div>
+                        </button>
                         <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("classify-bug-priority")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
@@ -1216,6 +1354,45 @@ export default function Home() {
                             <div>
                               <div className="fw-semibold">Bug Reported So Far</div>
                               <div className="small text-muted">View all bugs reported across products</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCCB"} Product Bug Status</h2>
+                        <span className="badge bg-primary-subtle text-primary">3 Items</span>
+                      </div>
+                      <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                            <div>
+                              <div className="fw-semibold">HP + MP Bugs Status Classification</div>
+                              <div className="small text-muted">View status of HP and MP product bugs</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("current-status")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
+                            <div>
+                              <div className="fw-semibold">Current Release Bugs Classification</div>
+                              <div className="small text-muted">View status of bugs in current release</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("new-ticket")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
+                            <div>
+                              <div className="fw-semibold">Ticket Status</div>
+                              <div className="small text-muted">Check the status of a specific ticket</div>
                             </div>
                           </div>
                         </button>
@@ -1251,15 +1428,23 @@ export default function Home() {
                         <h2 className="h5 fw-bold mb-0">{"\u2705"} Sprint Task</h2>
                         <span className="badge bg-primary-subtle text-primary">1 Step</span>
                       </div>
-                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
-                        <div className="d-flex gap-3">
-                          <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                      <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("watch-how-it-works-sprint")}>
                           <div>
-                            <div className="fw-semibold">Add Ticket To Sprint</div>
-                            <div className="small text-muted">Add a work ticket to the current sprint</div>
+                            <div className="fw-bold fst-italic">Watch How It Works</div>
+                            <div className="small text-muted">See how the sprint automation works in action</div>
                           </div>
-                        </div>
-                      </button>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                            <div>
+                              <div className="fw-semibold">Add Ticket To Sprint</div>
+                              <div className="small text-muted">Add a work ticket to the current sprint</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1821,43 +2006,43 @@ export default function Home() {
                               <tr>
                                 <td>Webview Load Time (Product Details)</td>
                                 <td>Primary</td>
-                                <td>X ms</td>
-                                <td>Y ms (reduction)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X ms</em></strong></td>
+                                <td><strong><em>Y ms</em></strong> (reduction)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Crash-Free Rate (Manage Products Module)</td>
                                 <td>Primary</td>
-                                <td>X%</td>
-                                <td>Y% (increase)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td><strong><em>Y%</em></strong> (increase)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Seller Adoption Rate (Webview Path)</td>
                                 <td>Secondary</td>
-                                <td>N/A (new path)</td>
-                                <td>X% of sellers viewing product details</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>N/A</em></strong> (new path)</td>
+                                <td><strong><em>X%</em></strong> of sellers viewing product details</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>API Error Rate (Product Details Webview)</td>
                                 <td>Secondary</td>
-                                <td>X%</td>
-                                <td>Y% (reduction)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td><strong><em>Y%</em></strong> (reduction)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Overall App Crash Rate</td>
                                 <td>Guardrail</td>
-                                <td>X%</td>
-                                <td>Maintain below Y%</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td>Maintain below <strong><em>Y%</em></strong></td>
                                 <td>Continuous</td>
                               </tr>
                               <tr>
                                 <td>Negative Reviews (related to product management)</td>
                                 <td>Guardrail</td>
-                                <td>X reviews/week</td>
-                                <td>Maintain below Y reviews/week</td>
+                                <td><strong><em>X reviews/week</em></strong></td>
+                                <td>Maintain below <strong><em>Y reviews/week</em></strong></td>
                                 <td>Continuous</td>
                               </tr>
                             </tbody>
@@ -1921,11 +2106,13 @@ export default function Home() {
                         <h3 className="h5 fw-bold mb-2">Business Goal</h3>
                         <p className="mb-2 ps-3">
                           Business Objective: Improve release velocity for seller-facing features in
-                          the Manage Products module by X% within Y quarters.
+                          the Manage Products module by <strong><em>X%</em></strong> within{" "}
+                          <strong><em>Y quarters</em></strong>.
                         </p>
                         <p className="mb-0 ps-3">
                           Company OKR / Strategic Pillar: O2: Modernize Seller Tech Stack -&gt; KR:
-                          Reduce average feature release cycle for seller tools by Z days.
+                          Reduce average feature release cycle for seller tools by{" "}
+                          <strong><em>Z days</em></strong>.
                         </p>
                       </div>
 
@@ -1953,8 +2140,9 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-3">
                           Supporting Data: Average time to deploy a new feature or bug fix in the
-                          native Manage Products module is X days. Y% of seller-facing features are
-                          delayed due to app release cycles. Z% of support tickets relate to
+                          native Manage Products module is <strong><em>X days</em></strong>.{" "}
+                          <strong><em>Y%</em></strong> of seller-facing features are delayed due to
+                          app release cycles. <strong><em>Z%</em></strong> of support tickets relate to
                           inconsistencies between web and app seller tools.
                         </p>
                         <p className="mb-2 ps-3">
@@ -1963,9 +2151,10 @@ export default function Home() {
                           potential seller dissatisfaction due to outdated app functionalities.
                         </p>
                         <p className="mb-0 ps-3">
-                          Opportunity Size: Accelerating feature delivery by X% for the Manage
-                          Products module could lead to a Y% increase in seller engagement with
-                          product listings and a Z% reduction in development cycles.
+                          Opportunity Size: Accelerating feature delivery by{" "}
+                          <strong><em>X%</em></strong> for the Manage Products module could lead to a{" "}
+                          <strong><em>Y%</em></strong> increase in seller engagement with product
+                          listings and a <strong><em>Z%</em></strong> reduction in development cycles.
                         </p>
                       </div>
 
@@ -2000,7 +2189,7 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-4">
                           Slow API response: Display a loading spinner/skeleton UI within the
-                          Webview. Timeout after X seconds and show an error.
+                          Webview. Timeout after <strong><em>X seconds</em></strong> and show an error.
                         </p>
                         <p className="mb-2 ps-4">
                           Empty state: If product details API returns no data, display a &quot;Product
@@ -2011,7 +2200,7 @@ export default function Home() {
                         </p>
                         <p className="mb-2 ps-4">
                           Android OS compatibility: Ensure Webview functions correctly on Android OS
-                          versions X and above.
+                          versions <strong><em>X</em></strong> and above.
                         </p>
                         <p className="mb-0 ps-4">
                           Backward compatibility: Ensure existing native product list view continues
@@ -2036,7 +2225,7 @@ export default function Home() {
                                 <td>
                                   Given the seller is on the &quot;My Products&quot; list. When the seller
                                   taps on a product. Then the Webview loads and displays the
-                                  read-only product details within X seconds.
+                                  read-only product details within <strong><em>X seconds</em></strong>.
                                 </td>
                                 <td>Functional</td>
                               </tr>
@@ -2061,8 +2250,8 @@ export default function Home() {
                                 <td>Performance: Webview Load Time</td>
                                 <td>
                                   Given the seller taps on a product. When the Webview loads the
-                                  product details. Then the content should be visible within X ms on
-                                  a 3G network.
+                                  product details. Then the content should be visible within{" "}
+                                  <strong><em>X ms</em></strong> on a 3G network.
                                 </td>
                                 <td>Performance</td>
                               </tr>
@@ -2078,7 +2267,7 @@ export default function Home() {
                               <tr>
                                 <td>Android Specific: OS Compatibility</td>
                                 <td>
-                                  Given the app is installed on Android X to Y. When the Webview
+                                  Given the app is installed on Android <strong><em>X to Y</em></strong>. When the Webview
                                   loads product details. Then the Webview should render correctly
                                   without UI glitches or crashes.
                                 </td>
@@ -2087,7 +2276,7 @@ export default function Home() {
                               <tr>
                                 <td>Android Specific: Crash-Free</td>
                                 <td>
-                                  Given the Webview is in use for Z minutes. When various
+                                  Given the Webview is in use for <strong><em>Z minutes</em></strong>. When various
                                   interactions occur. Then the app should remain crash-free.
                                 </td>
                                 <td>Stability</td>
@@ -2114,43 +2303,43 @@ export default function Home() {
                               <tr>
                                 <td>Webview Load Time (Product Details)</td>
                                 <td>Primary</td>
-                                <td>X ms</td>
-                                <td>Y ms (reduction)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X ms</em></strong></td>
+                                <td><strong><em>Y ms</em></strong> (reduction)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Crash-Free Rate (Manage Products Module)</td>
                                 <td>Primary</td>
-                                <td>X%</td>
-                                <td>Y% (increase)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td><strong><em>Y%</em></strong> (increase)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Seller Adoption Rate (Webview Path)</td>
                                 <td>Secondary</td>
-                                <td>N/A (new path)</td>
-                                <td>X% of sellers viewing product details</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>N/A</em></strong> (new path)</td>
+                                <td><strong><em>X%</em></strong> of sellers viewing product details</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>API Error Rate (Product Details Webview)</td>
                                 <td>Secondary</td>
-                                <td>X%</td>
-                                <td>Y% (reduction)</td>
-                                <td>Z days post-launch</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td><strong><em>Y%</em></strong> (reduction)</td>
+                                <td><strong><em>Z days</em></strong> post-launch</td>
                               </tr>
                               <tr>
                                 <td>Overall App Crash Rate</td>
                                 <td>Guardrail</td>
-                                <td>X%</td>
-                                <td>Maintain below Y%</td>
+                                <td><strong><em>X%</em></strong></td>
+                                <td>Maintain below <strong><em>Y%</em></strong></td>
                                 <td>Continuous</td>
                               </tr>
                               <tr>
                                 <td>Negative Reviews (related to product management)</td>
                                 <td>Guardrail</td>
-                                <td>X reviews/week</td>
-                                <td>Maintain below Y reviews/week</td>
+                                <td><strong><em>X reviews/week</em></strong></td>
+                                <td>Maintain below <strong><em>Y reviews/week</em></strong></td>
                                 <td>Continuous</td>
                               </tr>
                             </tbody>
@@ -2210,8 +2399,9 @@ export default function Home() {
                           Variant Group: Sees the new Webview for product details.
                         </p>
                         <p className="mb-2 ps-3">
-                          Experiment success trigger metric: Maintain crash-free rate above X% and
-                          Webview load time below Y ms for the variant group.
+                          Experiment success trigger metric: Maintain crash-free rate above{" "}
+                          <strong><em>X%</em></strong> and Webview load time below{" "}
+                          <strong><em>Y ms</em></strong> for the variant group.
                         </p>
                         <p className="mb-0 ps-3">
                           Rollback: Setting enable_product_details_webview remote config key to false
@@ -2247,14 +2437,6 @@ export default function Home() {
                   )}
                 </div>
               </div>
-            </div>
-          ) : activeTab === "bug-reported-so-far" ? (
-            <div
-              className="card shadow-lg p-5 text-center mx-auto"
-              style={{ maxWidth: "520px", width: "100%", borderRadius: "20px" }}
-            >
-              <h1 className="mb-4 fw-bold text-primary text-center">Bug Reported So Far</h1>
-              <p className="text-muted mb-0">This section is coming soon.</p>
             </div>
           ) : activeTab === "hp-mp-bugs-status" ? (
             <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
@@ -2312,15 +2494,55 @@ export default function Home() {
               </div>
 
               {!!newTicketResult && (
-                <div className="card border mt-4">
-                  <div className="card-header bg-light fw-bold">Ticket Status Response</div>
-                  <div className="card-body">
-                    <pre className="mb-0 text-wrap" style={{ whiteSpace: "pre-wrap" }}>
-                      {typeof newTicketResult === "string" ? newTicketResult : JSON.stringify(newTicketResult, null, 2)}
-                    </pre>
+                <div className="mt-5">
+                  <div className="d-flex align-items-center gap-2 mb-4">
+                    <div className="bg-primary text-white p-2 rounded-3">
+                      {"\u2705"}
+                    </div>
+                    <h2 className="h5 fw-bold mb-0">Ticket Status Result</h2>
                   </div>
+                  {renderNewTicketResult(newTicketResult)}
                 </div>
               )}
+            </div>
+          ) : activeTab === "bug-reported-so-far" ? (
+            <div
+              className="card shadow-lg p-5 text-center mx-auto"
+              style={{ maxWidth: "520px", width: "100%", borderRadius: "20px" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">Bug Reported So Far</h1>
+              <p className="text-muted mb-0">This section is coming soon.</p>
+            </div>
+          ) : activeTab === "watch-how-it-works-bug-classifier" ? (
+            <div
+              className="card shadow-lg p-4 p-md-5"
+              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">Watch How It Works</h1>
+              <div style={videoContainerStyle}>
+                <iframe
+                  src="https://drive.google.com/file/d/1fOt4JOMdhNIUNgG3x1xy0mSFcVPO9h0Y/preview"
+                  allowFullScreen
+                  style={videoIframeStyle}
+                  title="Bug classifier walkthrough"
+                />
+              </div>
+            </div>
+          ) : activeTab === "watch-how-it-works-sprint" ? (
+            <div
+              className="card shadow-lg p-4 p-md-5"
+              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">Watch How It Works</h1>
+              <div style={videoContainerStyle}>
+                <iframe
+                  src="https://drive.google.com/file/d/1U82YUdK5EhsV6vt7hVmdcKbBjGjVtqfH/preview"
+                  allow="autoplay"
+                  allowFullScreen
+                  style={videoIframeStyle}
+                  title="Sprint workflow walkthrough"
+                />
+              </div>
             </div>
           ) : activeTab === "add-ticket-to-sprint" ? (
             <div
@@ -2416,21 +2638,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-
-              <section className="mt-5">
-                <h2 className="h3 fw-bold text-primary text-center mb-4">Watch How It Works</h2>
-                <div className="mx-auto" style={{ maxWidth: "900px" }}>
-                  <iframe
-                    src="https://drive.google.com/file/d/1U82YUdK5EhsV6vt7hVmdcKbBjGjVtqfH/preview"
-                    width="100%"
-                    height="480"
-                    allow="autoplay"
-                    allowFullScreen
-                    className="rounded-4 shadow-sm border-0"
-                    title="Add Ticket To Sprint Demo Video"
-                  />
-                </div>
-              </section>
             </div>
           ) : (
             <div
