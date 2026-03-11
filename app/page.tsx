@@ -11,11 +11,15 @@ type TabKey =
   | "classify-bug-priority"
   | "bug-reported-so-far"
   | "indiamart-bug-guidelines"
+  | "hp-mp-bugs-status"
+  | "current-status"
+  | "new-ticket"
   | "watch-how-it-works-sprint"
   | "add-ticket-to-sprint";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
   | "product-bug-classifier"
+  | "product-bug-status"
   | "docs"
   | "sprint-task";
 type GenericRecord = Record<string, unknown>;
@@ -23,6 +27,7 @@ type GenericRecord = Record<string, unknown>;
 const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": true,
   "product-bug-classifier": false,
+  "product-bug-status": false,
   docs: false,
   "sprint-task": false,
 };
@@ -30,6 +35,7 @@ const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
 const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "mobile-app-story-ticket-development": false,
   "product-bug-classifier": false,
+  "product-bug-status": false,
   docs: false,
   "sprint-task": false,
 };
@@ -678,6 +684,95 @@ const unwrapWebhookPayload = (value: unknown): unknown => {
   return parsed;
 };
 
+const renderNewTicketResult = (result: unknown): ReactNode => {
+  if (!result) return null;
+
+  if (typeof result === "string") {
+    return (
+      <div className="alert alert-info border-0 shadow-sm">
+        <div className="d-flex align-items-center gap-2">
+          <span>{"\u2139\uFE0F"}</span>
+          <div>{result}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const data = isRecord(result) ? result : {};
+
+
+  // Extract fields with flexible naming (matching exact webhook keys)
+  const ticketId = asText(data.ticket_id || data.ticketId || data.id || "N/A");
+  const bifurcationStatus = asText(data.bifurcation_status || data.bifurcationStatus || data.status || "N/A");
+  const confidenceScore = asText(data.confidence_score || data.confidenceScore || data.confidence || "N/A");
+  const bifurcationJustification = asText(
+    data.Bifurcation_justification ||
+    data.bifurcation_justification ||
+    data.bifurcationJustification ||
+    data.justification ||
+    "N/A"
+  );
+  const aiSummary = asText(
+    (data as Record<string, unknown>)["AI Summary"] ||
+    data.ai_summary ||
+    data.aiSummary ||
+    data.summary ||
+    "N/A"
+  );
+
+  return (
+    <div className="d-grid gap-3">
+      {/* Row 1: Ticket ID and Bifurcation Status */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex flex-column">
+            <span className="text-muted small fw-semibold text-uppercase">Ticket ID</span>
+            <span className="h5 mb-0 fw-bold text-dark">{ticketId}</span>
+          </div>
+          <div className="card bg-primary text-white border-0 shadow-sm px-4 py-2" style={{ borderRadius: "10px" }}>
+            <div className="small text-white-50 text-uppercase fw-bold" style={{ fontSize: "0.7rem" }}>Bifurcation Status</div>
+            <div className="fw-bold">{bifurcationStatus}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Confidence Score */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-1">Confidence Score</span>
+          <div className="d-flex align-items-center gap-2">
+            <div className="progress flex-grow-1" style={{ height: "8px" }}>
+              <div 
+                className="progress-bar bg-success" 
+                role="progressbar" 
+                style={{ width: confidenceScore.includes("%") ? confidenceScore : `${parseFloat(confidenceScore) * 100}%` }}
+              ></div>
+            </div>
+            <span className="fw-bold text-success">{confidenceScore}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Bifurcation Justification */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-2">Bifurcation Justification</span>
+          <p className="mb-0 text-dark lh-base">{bifurcationJustification}</p>
+        </div>
+      </div>
+
+      {/* Row 4: AI Summary */}
+      <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px" }}>
+        <div className="d-flex flex-column">
+          <span className="text-muted small fw-semibold text-uppercase mb-2">AI Summary</span>
+          <p className="mb-0 text-dark lh-base">{aiSummary}</p>
+        </div>
+      </div>
+     
+    </div>
+  );
+};
+
 export default function Home() {
   const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -709,6 +804,10 @@ export default function Home() {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(true);
   const [isBasicTemplateOpen, setIsBasicTemplateOpen] = useState(true);
   const [isBotTemplateOpen, setIsBotTemplateOpen] = useState(false);
+  const [newTicketId, setNewTicketId] = useState("");
+  const [newTicketLoading, setNewTicketLoading] = useState(false);
+  const [newTicketError, setNewTicketError] = useState("");
+  const [newTicketResult, setNewTicketResult] = useState<unknown | null>(null);
 
   const handleGenerate = async () => {
     const trimmedId = ticketId.trim();
@@ -861,6 +960,45 @@ export default function Home() {
     }
   };
 
+  const handleNewTicketSubmit = async () => {
+    const trimmedId = newTicketId.trim();
+    if (!trimmedId) {
+      setNewTicketError("Please enter a Ticket ID.");
+      return;
+    }
+    setNewTicketLoading(true);
+    setNewTicketError("");
+    setNewTicketResult(null);
+
+    try {
+      const response = await fetch(
+        "https://imworkflow.intermesh.net/webhook/classify-ticket",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ticketId: trimmedId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      
+      const rawText = await response.text();
+      const parsedResponse = parseJsonIfString(rawText);
+      const unwrapped = unwrapWebhookPayload(parsedResponse);
+     
+      setNewTicketResult(unwrapped);
+    } catch (error) {
+      console.error(error);
+      setNewTicketError(getErrorMessage(error));
+    } finally {
+      setNewTicketLoading(false);
+    }
+  };
+
   const navGroups: Array<{
     key: NavGroupKey;
     label: string;
@@ -901,6 +1039,24 @@ export default function Home() {
         {
           key: "bug-reported-so-far",
           label: "Bug Reported So Far",
+        },
+      ],
+    },
+    {
+      key: "product-bug-status",
+      label: "Product Bug Status",
+      items: [
+        {
+          key: "hp-mp-bugs-status",
+          label: "HP + MP Bugs Status Classification",
+        },
+        {
+          key: "current-status",
+          label: "Current Release Bugs Classification",
+        },
+        {
+          key: "new-ticket",
+          label: "Ticket Status",
         },
       ],
     },
@@ -1198,6 +1354,45 @@ export default function Home() {
                             <div>
                               <div className="fw-semibold">Bug Reported So Far</div>
                               <div className="small text-muted">View all bugs reported across products</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCCB"} Product Bug Status</h2>
+                        <span className="badge bg-primary-subtle text-primary">3 Items</span>
+                      </div>
+                      <div className="d-grid gap-2">
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
+                            <div>
+                              <div className="fw-semibold">HP + MP Bugs Status Classification</div>
+                              <div className="small text-muted">View status of HP and MP product bugs</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("current-status")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
+                            <div>
+                              <div className="fw-semibold">Current Release Bugs Classification</div>
+                              <div className="small text-muted">View status of bugs in current release</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("new-ticket")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
+                            <div>
+                              <div className="fw-semibold">Ticket Status</div>
+                              <div className="small text-muted">Check the status of a specific ticket</div>
                             </div>
                           </div>
                         </button>
@@ -2242,6 +2437,73 @@ export default function Home() {
                   )}
                 </div>
               </div>
+            </div>
+          ) : activeTab === "hp-mp-bugs-status" ? (
+            <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+              <h1 className="mb-4 fw-bold text-primary text-center">HP + MP Product Bugs Status Classification</h1>
+              <div className="card border shadow-sm p-4 text-center">
+                <p className="mb-4">Click below to join the respective spaces:</p>
+                <div className="d-flex flex-column flex-md-row justify-content-center gap-3">
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAAuMInwWc" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-flex align-items-center justify-content-center gap-2">
+                    <span>Android Space</span>
+                  </a>
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAAqBfN7_Y" target="_blank" rel="noopener noreferrer" className="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                    <span>iOS Space</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "current-status" ? (
+            <div className="items-center justify-center p-4">
+              <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+                <h1 className="mb-4 fw-bold text-primary text-center">Current Release Status</h1>
+                <div className="card border shadow-sm p-4 text-center">
+                  <p className="mb-4">Click below to join the Current Release Space:</p>
+                  <a href="https://mail.google.com/chat/u/0/#chat/space/AAAA_eX6qK4" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center gap-2">
+                    <span>Current Release Space</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "new-ticket" ? (
+            <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+              <h1 className="mb-4 fw-bold text-primary text-center">Ticket Status</h1>
+              <div className="mb-4">
+                <label htmlFor="new-ticket-id" className="form-label fw-semibold">Enter Ticket ID</label>
+                <div className="input-group">
+                  <input
+                    id="new-ticket-id"
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Ticket ID"
+                    value={newTicketId}
+                    onChange={(e) => setNewTicketId(e.target.value)}
+                  />
+                  <button
+                    className="btn btn-primary d-flex align-items-center justify-content-center"
+                    onClick={handleNewTicketSubmit}
+                    disabled={newTicketLoading}
+                  >
+                    {newTicketLoading ? (
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                    ) : null}
+                    {newTicketLoading ? "Checking..." : "Check Status"}
+                  </button>
+                </div>
+                {newTicketError && <div className="text-danger mt-2 small">{newTicketError}</div>}
+              </div>
+
+              {!!newTicketResult && (
+                <div className="mt-5">
+                  <div className="d-flex align-items-center gap-2 mb-4">
+                    <div className="bg-primary text-white p-2 rounded-3">
+                      {"\u2705"}
+                    </div>
+                    <h2 className="h5 fw-bold mb-0">Ticket Status Result</h2>
+                  </div>
+                  {renderNewTicketResult(newTicketResult)}
+                </div>
+              )}
             </div>
           ) : activeTab === "bug-reported-so-far" ? (
             <div
