@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type TabKey =
   | "home"
@@ -15,13 +16,15 @@ type TabKey =
   | "current-status"
   | "new-ticket"
   | "watch-how-it-works-sprint"
-  | "add-ticket-to-sprint";
+  | "add-ticket-to-sprint"
+  | "play-store-release-automation";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
   | "product-bug-classifier"
   | "product-bug-status"
   | "docs"
-  | "sprint-task";
+  | "sprint-task"
+  | "android-build-automation";
 type GenericRecord = Record<string, unknown>;
 
 const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
@@ -30,6 +33,7 @@ const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "product-bug-status": false,
   docs: false,
   "sprint-task": false,
+  "android-build-automation": false,
 };
 
 const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
@@ -38,6 +42,7 @@ const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "product-bug-status": false,
   docs: false,
   "sprint-task": false,
+  "android-build-automation": false,
 };
 
 const isRecord = (value: unknown): value is GenericRecord =>
@@ -774,6 +779,7 @@ const renderNewTicketResult = (result: unknown): ReactNode => {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<unknown | null>(null);
@@ -1086,6 +1092,16 @@ export default function Home() {
         },
       ],
     },
+    {
+      key: "android-build-automation",
+      label: "Android Build Automation",
+      items: [
+        {
+          key: "play-store-release-automation",
+          label: "Play Store Release Automation",
+        },
+      ],
+    },
   ];
 
   const normalizedReport = useMemo(() => {
@@ -1291,7 +1307,7 @@ export default function Home() {
                     </div>
                   </div>
                   <span className="badge rounded-pill bg-light text-primary fs-6 px-3 py-2">
-                    5 Automations
+                    6 Automations
                   </span>
                 </div>
               </div>
@@ -1457,6 +1473,37 @@ export default function Home() {
                           </div>
                         </button>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\u2699"} Android Build Automation</h2>
+                        <span className="badge bg-primary-subtle text-primary">1 Step</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-light border text-start p-3 w-100"
+                        onClick={() => setActiveTab("play-store-release-automation")}
+                      >
+                        <div className="d-flex gap-3">
+                          <span
+                            className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                            style={{ width: "28px", height: "28px" }}
+                          >
+                            1
+                          </span>
+                          <div>
+                            <div className="fw-semibold">Play Store Release Automation</div>
+                            <div className="small text-muted">
+                              Access the full Android build and release automation suite
+                            </div>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2650,6 +2697,36 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "play-store-release-automation" ? (
+            <div
+              className="card shadow-lg p-4 p-md-5"
+              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">
+                Play Store Release Automation
+              </h1>
+
+              <div className="card border shadow-sm mx-auto" style={{ maxWidth: "820px" }}>
+                <div className="card-body p-4 p-md-5 text-center">
+                  <p className="mb-4">
+                    The full Android Build Automation suite - including Change Version Code,
+                    Create Build (APK), Create Build &amp; Upload to Firebase, Create Bundle
+                    (AAB), Create Bundle &amp; Upload to Play Store (Internal), and Create
+                    Bundle &amp; Upload to Play Store (Beta) - is available on the Build
+                    Automation page.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary px-4 py-2 fw-semibold"
+                    style={{ borderRadius: "10px" }}
+                    onClick={() => router.push("/build_automation")}
+                  >
+                    Take Me There
+                  </button>
                 </div>
               </div>
             </div>
