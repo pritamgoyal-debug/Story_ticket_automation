@@ -2709,24 +2709,173 @@ export default function Home() {
                 Play Store Release Automation
               </h1>
 
-              <div className="card border shadow-sm mx-auto" style={{ maxWidth: "820px" }}>
-                <div className="card-body p-4 p-md-5 text-center">
-                  <p className="mb-4">
-                    The full Android Build Automation suite - including Change Version Code,
-                    Create Build (APK), Create Build &amp; Upload to Firebase, Create Bundle
-                    (AAB), Create Bundle &amp; Upload to Play Store (Internal), and Create
-                    Bundle &amp; Upload to Play Store (Beta) - is available on the Build
-                    Automation page.
-                  </p>
+              <div className="d-grid gap-4">
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      What is this?
+                    </h2>
+                    <p className="mb-0">
+                      The Android Build Automation suite lets you trigger GitLab CI/CD
+                      pipelines directly from your browser - no terminal, no manual steps.
+                      From updating the version code to publishing a release on the Play
+                      Store, everything is automated and trackable in one place.
+                    </p>
+                  </div>
+                </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-primary px-4 py-2 fw-semibold"
-                    style={{ borderRadius: "10px" }}
-                    onClick={() => router.push("/build_automation")}
-                  >
-                    Take Me There
-                  </button>
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      What can this automation do?
+                    </h2>
+                    <div className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDD22"}</span>
+                            <div>
+                              <div className="fw-semibold">Change Version Code</div>
+                              <small className="text-muted">
+                                Update the app version code without a manual commit
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDCE6"}</span>
+                            <div>
+                              <div className="fw-semibold">Create the Build (APK)</div>
+                              <small className="text-muted">
+                                Generate a release APK ready for distribution
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDD25"}</span>
+                            <div>
+                              <div className="fw-semibold">Create Build &amp; Upload to Firebase</div>
+                              <small className="text-muted">
+                                Build APK and instantly distribute via Firebase App Distribution
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDCF1"}</span>
+                            <div>
+                              <div className="fw-semibold">Create Bundle (AAB)</div>
+                              <small className="text-muted">
+                                Generate an Android App Bundle for Play Store submission
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDE80"}</span>
+                            <div>
+                              <div className="fw-semibold">
+                                Create Bundle &amp; Upload to Play Store (Internal)
+                              </div>
+                              <small className="text-muted">
+                                Build AAB and push directly to the internal testing track
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83E\uDDEA"}</span>
+                            <div>
+                              <div className="fw-semibold">
+                                Create Bundle &amp; Upload to Play Store (Beta)
+                              </div>
+                              <small className="text-muted">
+                                Build AAB and push directly to the beta testing track
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      Who can use this?
+                    </h2>
+                    <div className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <div className="rounded-4 h-100 p-4" style={{ background: "#eef2ff" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDC68\u200D\uD83D\uDCBB"}</span>
+                            <div>
+                              <div className="fw-semibold mb-2">Developers</div>
+                              <p className="mb-0 text-muted">
+                                Trigger builds at any stage of development - test APKs on
+                                Firebase, validate bundles, or bump the version code before a
+                                release without leaving your browser.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="rounded-4 h-100 p-4" style={{ background: "#f5f3ff" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDE80"}</span>
+                            <div>
+                              <div className="fw-semibold mb-2">Release Managers</div>
+                              <p className="mb-0 text-muted">
+                                Manage the full release pipeline end to end - from internal
+                                testing to beta rollout on the Play Store - with full visibility
+                                into pipeline status and one-click triggers.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card border shadow-sm mx-auto" style={{ maxWidth: "820px" }}>
+                  <div className="card-body p-4 p-md-5 text-center">
+                    <p className="mb-4 text-muted">
+                      Ready to get started? The full Build Automation Dashboard is available on
+                      the dedicated page.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="btn btn-lg text-white fw-semibold px-5"
+                      style={{
+                        background: "linear-gradient(135deg, #667eea, #764ba2)",
+                        border: "none",
+                        borderRadius: "10px",
+                      }}
+                      onClick={() => router.push("/build_automation")}
+                    >
+                      Take Me There
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
