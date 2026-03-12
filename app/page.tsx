@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type TabKey =
@@ -780,6 +780,12 @@ const renderNewTicketResult = (result: unknown): ReactNode => {
 
 export default function Home() {
   const router = useRouter();
+  const [isAppAuthenticated, setIsAppAuthenticated] = useState(false);
+  const [showLoginPage, setShowLoginPage] = useState(false);
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
   const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<unknown | null>(null);
@@ -814,6 +820,65 @@ export default function Home() {
   const [newTicketLoading, setNewTicketLoading] = useState(false);
   const [newTicketError, setNewTicketError] = useState("");
   const [newTicketResult, setNewTicketResult] = useState<unknown | null>(null);
+
+  useEffect(() => {
+    const session = sessionStorage.getItem("app_auth");
+    if (session === "true") {
+      setIsAppAuthenticated(true);
+    }
+  }, []);
+
+  const isProtectedTab = (tab: TabKey): boolean => tab !== "home";
+
+  const navigateToTab = (tab: TabKey) => {
+    if (!isProtectedTab(tab)) {
+      setShowLoginPage(false);
+      setPendingTab(null);
+      setActiveTab(tab);
+      return;
+    }
+
+    if (isAppAuthenticated) {
+      setShowLoginPage(false);
+      setPendingTab(null);
+      setActiveTab(tab);
+      return;
+    }
+
+    setPendingTab(tab);
+    setAuthError("");
+    setShowLoginPage(true);
+  };
+
+  const handleAppLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    if (!authUsername.trim() || !authPassword.trim()) {
+      setAuthError("Please enter both username and password.");
+      return;
+    }
+
+    sessionStorage.setItem("app_auth", "true");
+    setIsAppAuthenticated(true);
+    setShowLoginPage(false);
+    setAuthUsername("");
+    setAuthPassword("");
+
+    const destination = pendingTab ?? "home";
+    setPendingTab(null);
+    setActiveTab(destination);
+  };
+
+  const handleAppLogout = () => {
+    sessionStorage.removeItem("app_auth");
+    setIsAppAuthenticated(false);
+    setAuthUsername("");
+    setAuthPassword("");
+    setAuthError("");
+    setPendingTab(activeTab !== "home" ? activeTab : null);
+    setShowLoginPage(true);
+  };
 
   const handleGenerate = async () => {
     const trimmedId = ticketId.trim();
@@ -1187,6 +1252,89 @@ export default function Home() {
     border: "none",
   };
 
+  if (showLoginPage && !isAppAuthenticated) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 50%, #dfe6f6 100%)",
+        }}
+      >
+        <div
+          className="card shadow-lg border-0"
+          style={{ width: "100%", maxWidth: 420, borderRadius: 16 }}
+        >
+          <div className="card-body p-5">
+            <div className="text-center mb-4">
+              <div
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  color: "#fff",
+                  marginBottom: 12,
+                }}
+              >
+                {"\uD83D\uDD12"}
+              </div>
+              <h3 className="fw-bold" style={{ color: "#1a1a2e" }}>
+                App Team Automations
+              </h3>
+              <p className="text-muted small mb-0">
+                Sign in to access the automation tools
+              </p>
+            </div>
+
+            {authError && <div className="alert alert-danger py-2 small">{authError}</div>}
+
+            <form onSubmit={handleAppLogin}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold small">Username</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter your username"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="mb-4">
+                <label className="form-label fw-semibold small">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Enter your password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn w-100 text-white fw-semibold"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  border: "none",
+                  padding: "10px 0",
+                  borderRadius: 8,
+                }}
+              >
+                Sign In
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="d-flex min-vh-100 bg-light">
       <aside
@@ -1270,7 +1418,7 @@ export default function Home() {
                         className={`btn text-start ps-3 ${
                           activeTab === item.key ? "btn-primary" : "btn-outline-primary"
                         }`}
-                        onClick={() => setActiveTab(item.key)}
+                        onClick={() => navigateToTab(item.key)}
                       >
                         <span className={item.emphasize ? "fw-bold fst-italic" : undefined}>
                           {item.showNumber === false
@@ -1290,6 +1438,13 @@ export default function Home() {
 
       <main className="flex-grow-1 p-4">
         <div className="w-100 mx-auto" style={{ maxWidth: "980px" }}>
+          {isAppAuthenticated && (
+            <div className="d-flex justify-content-end mb-3">
+              <button className="btn btn-outline-dark btn-sm" onClick={handleAppLogout}>
+                Logout
+              </button>
+            </div>
+          )}
           {activeTab === "home" ? (
             <div className="d-grid gap-4">
               <div
@@ -1321,7 +1476,7 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">3 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("mobile-app-story-template")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("mobile-app-story-template")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1330,7 +1485,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("rebuild-existing-story")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("rebuild-existing-story")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1339,7 +1494,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("review-story-ticket")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("review-story-ticket")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
                             <div>
@@ -1361,13 +1516,13 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">2 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("watch-how-it-works-bug-classifier")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("watch-how-it-works-bug-classifier")}>
                           <div>
                             <div className="fw-bold fst-italic">Watch How It Works</div>
                             <div className="small text-muted">See how the bug classifier works in action</div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("classify-bug-priority")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("classify-bug-priority")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1376,7 +1531,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("bug-reported-so-far")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("bug-reported-so-far")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1397,7 +1552,7 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">3 Items</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("hp-mp-bugs-status")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1406,7 +1561,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("current-status")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("current-status")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1415,7 +1570,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("new-ticket")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("new-ticket")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
                             <div>
@@ -1436,7 +1591,7 @@ export default function Home() {
                         <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCC4"} Documentation</h2>
                         <span className="badge bg-primary-subtle text-primary">Docs</span>
                       </div>
-                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("indiamart-bug-guidelines")}>
+                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("indiamart-bug-guidelines")}>
                         <div className="d-flex gap-3">
                           <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                           <div>
@@ -1457,13 +1612,13 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">1 Step</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("watch-how-it-works-sprint")}>
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("watch-how-it-works-sprint")}>
                           <div>
                             <div className="fw-bold fst-italic">Watch How It Works</div>
                             <div className="small text-muted">See how the sprint automation works in action</div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("add-ticket-to-sprint")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1487,7 +1642,7 @@ export default function Home() {
                       <button
                         type="button"
                         className="btn btn-light border text-start p-3 w-100"
-                        onClick={() => setActiveTab("play-store-release-automation")}
+                        onClick={() => navigateToTab("play-store-release-automation")}
                       >
                         <div className="d-flex gap-3">
                           <span
@@ -1927,7 +2082,7 @@ export default function Home() {
                       <button
                         type="button"
                         className="btn btn-link p-0 align-baseline link-primary text-decoration-underline"
-                        onClick={() => setActiveTab("indiamart-bug-guidelines")}
+                        onClick={() => navigateToTab("indiamart-bug-guidelines")}
                       >
                         click here
                       </button>
