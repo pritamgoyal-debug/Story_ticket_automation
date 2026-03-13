@@ -14,6 +14,7 @@ type TabKey =
   | "hp-mp-bugs-status"
   | "current-status"
   | "new-ticket"
+  | "edd-tracker"
   | "watch-how-it-works-sprint"
   | "add-ticket-to-sprint";
 type NavGroupKey =
@@ -1058,6 +1059,10 @@ export default function Home() {
           key: "new-ticket",
           label: "Ticket Status",
         },
+        {
+          key: "edd-tracker",
+          label: "EDD Tracker",
+        },
       ],
     },
     {
@@ -1378,7 +1383,7 @@ export default function Home() {
                     <div className="card-body p-4">
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCCB"} Product Bug Status</h2>
-                        <span className="badge bg-primary-subtle text-primary">3 Items</span>
+                        <span className="badge bg-primary-subtle text-primary">4 Items</span>
                       </div>
                       <div className="d-grid gap-2">
                         <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
@@ -1405,6 +1410,15 @@ export default function Home() {
                             <div>
                               <div className="fw-semibold">Ticket Status</div>
                               <div className="small text-muted">Check the status of a specific ticket</div>
+                            </div>
+                          </div>
+                        </button>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("edd-tracker")}>
+                          <div className="d-flex gap-3">
+                            <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>4</span>
+                            <div>
+                              <div className="fw-semibold">EDD Tracker</div>
+                              <div className="small text-muted">Open EDD Tracker Space</div>
                             </div>
                           </div>
                         </button>
@@ -2474,6 +2488,20 @@ export default function Home() {
                   <div className="d-flex justify-content-center">
                     <a href="https://mail.google.com/chat/u/0/#chat/space/AAAA_eX6qK4" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
                       <span>Current Release Space</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "edd-tracker" ? (
+            <div className="items-center justify-center p-4">
+              <div className="card shadow-lg p-4 p-md-5" style={{ width: "100%", borderRadius: "20px" }}>
+                <h1 className="mb-4 fw-bold text-primary text-center">EDD Tracker</h1>
+                <div className="card border shadow-sm p-4 text-center">
+                  <p className="mb-4">Click below to join the EDD Tracker Space:</p>
+                  <div className="d-flex justify-content-center">
+                    <a href="https://chat.google.com/room/AAQAnlZj--Q?cls=1" target="_blank" rel="noopener noreferrer" className="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
+                      <span>EDD Tracker Space</span>
                     </a>
                   </div>
                 </div>
