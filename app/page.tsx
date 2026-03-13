@@ -1,6 +1,7 @@
 "use client";
 
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type TabKey =
   | "home"
@@ -16,13 +17,15 @@ type TabKey =
   | "new-ticket"
   | "edd-tracker"
   | "watch-how-it-works-sprint"
-  | "add-ticket-to-sprint";
+  | "add-ticket-to-sprint"
+  | "play-store-release-automation";
 type NavGroupKey =
   | "mobile-app-story-ticket-development"
   | "product-bug-classifier"
   | "product-bug-status"
   | "docs"
-  | "sprint-task";
+  | "sprint-task"
+  | "android-build-automation";
 type GenericRecord = Record<string, unknown>;
 
 const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
@@ -31,6 +34,7 @@ const DEFAULT_OPEN_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "product-bug-status": false,
   docs: false,
   "sprint-task": false,
+  "android-build-automation": false,
 };
 
 const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
@@ -39,6 +43,7 @@ const CLOSED_NAV_GROUPS: Record<NavGroupKey, boolean> = {
   "product-bug-status": false,
   docs: false,
   "sprint-task": false,
+  "android-build-automation": false,
 };
 
 const isRecord = (value: unknown): value is GenericRecord =>
@@ -775,6 +780,13 @@ const renderNewTicketResult = (result: unknown): ReactNode => {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const [isAppAuthenticated, setIsAppAuthenticated] = useState(false);
+  const [showLoginPage, setShowLoginPage] = useState(false);
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
   const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<unknown | null>(null);
@@ -809,6 +821,65 @@ export default function Home() {
   const [newTicketLoading, setNewTicketLoading] = useState(false);
   const [newTicketError, setNewTicketError] = useState("");
   const [newTicketResult, setNewTicketResult] = useState<unknown | null>(null);
+
+  useEffect(() => {
+    const session = sessionStorage.getItem("app_auth");
+    if (session === "true") {
+      setIsAppAuthenticated(true);
+    }
+  }, []);
+
+  const isProtectedTab = (tab: TabKey): boolean => tab !== "home";
+
+  const navigateToTab = (tab: TabKey) => {
+    if (!isProtectedTab(tab)) {
+      setShowLoginPage(false);
+      setPendingTab(null);
+      setActiveTab(tab);
+      return;
+    }
+
+    if (isAppAuthenticated) {
+      setShowLoginPage(false);
+      setPendingTab(null);
+      setActiveTab(tab);
+      return;
+    }
+
+    setPendingTab(tab);
+    setAuthError("");
+    setShowLoginPage(true);
+  };
+
+  const handleAppLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    if (!authUsername.trim() || !authPassword.trim()) {
+      setAuthError("Please enter both username and password.");
+      return;
+    }
+
+    sessionStorage.setItem("app_auth", "true");
+    setIsAppAuthenticated(true);
+    setShowLoginPage(false);
+    setAuthUsername("");
+    setAuthPassword("");
+
+    const destination = pendingTab ?? "home";
+    setPendingTab(null);
+    setActiveTab(destination);
+  };
+
+  const handleAppLogout = () => {
+    sessionStorage.removeItem("app_auth");
+    setIsAppAuthenticated(false);
+    setAuthUsername("");
+    setAuthPassword("");
+    setAuthError("");
+    setPendingTab(activeTab !== "home" ? activeTab : null);
+    setShowLoginPage(true);
+  };
 
   const handleGenerate = async () => {
     const trimmedId = ticketId.trim();
@@ -1091,6 +1162,16 @@ export default function Home() {
         },
       ],
     },
+    {
+      key: "android-build-automation",
+      label: "Android Build Automation",
+      items: [
+        {
+          key: "play-store-release-automation",
+          label: "Play Store Release Automation",
+        },
+      ],
+    },
   ];
 
   const normalizedReport = useMemo(() => {
@@ -1176,6 +1257,89 @@ export default function Home() {
     border: "none",
   };
 
+  if (showLoginPage && !isAppAuthenticated) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 50%, #dfe6f6 100%)",
+        }}
+      >
+        <div
+          className="card shadow-lg border-0"
+          style={{ width: "100%", maxWidth: 420, borderRadius: 16 }}
+        >
+          <div className="card-body p-5">
+            <div className="text-center mb-4">
+              <div
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  color: "#fff",
+                  marginBottom: 12,
+                }}
+              >
+                {"\uD83D\uDD12"}
+              </div>
+              <h3 className="fw-bold" style={{ color: "#1a1a2e" }}>
+                App Team Automations
+              </h3>
+              <p className="text-muted small mb-0">
+                Sign in to access the automation tools
+              </p>
+            </div>
+
+            {authError && <div className="alert alert-danger py-2 small">{authError}</div>}
+
+            <form onSubmit={handleAppLogin}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold small">Username</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter your username"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="mb-4">
+                <label className="form-label fw-semibold small">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Enter your password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn w-100 text-white fw-semibold"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  border: "none",
+                  padding: "10px 0",
+                  borderRadius: 8,
+                }}
+              >
+                Sign In
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="d-flex min-vh-100 bg-light">
       <aside
@@ -1259,7 +1423,7 @@ export default function Home() {
                         className={`btn text-start ps-3 ${
                           activeTab === item.key ? "btn-primary" : "btn-outline-primary"
                         }`}
-                        onClick={() => setActiveTab(item.key)}
+                        onClick={() => navigateToTab(item.key)}
                       >
                         <span className={item.emphasize ? "fw-bold fst-italic" : undefined}>
                           {item.showNumber === false
@@ -1279,6 +1443,13 @@ export default function Home() {
 
       <main className="flex-grow-1 p-4">
         <div className="w-100 mx-auto" style={{ maxWidth: "980px" }}>
+          {isAppAuthenticated && (
+            <div className="d-flex justify-content-end mb-3">
+              <button className="btn btn-outline-dark btn-sm" onClick={handleAppLogout}>
+                Logout
+              </button>
+            </div>
+          )}
           {activeTab === "home" ? (
             <div className="d-grid gap-4">
               <div
@@ -1296,7 +1467,7 @@ export default function Home() {
                     </div>
                   </div>
                   <span className="badge rounded-pill bg-light text-primary fs-6 px-3 py-2">
-                    5 Automations
+                    6 Automations
                   </span>
                 </div>
               </div>
@@ -1310,7 +1481,7 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">3 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("mobile-app-story-template")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("mobile-app-story-template")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1319,7 +1490,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("rebuild-existing-story")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("rebuild-existing-story")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1328,7 +1499,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("review-story-ticket")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("review-story-ticket")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
                             <div>
@@ -1350,13 +1521,13 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">2 Steps</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("watch-how-it-works-bug-classifier")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("watch-how-it-works-bug-classifier")}>
                           <div>
                             <div className="fw-bold fst-italic">Watch How It Works</div>
                             <div className="small text-muted">See how the bug classifier works in action</div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("classify-bug-priority")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("classify-bug-priority")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1365,7 +1536,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("bug-reported-so-far")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("bug-reported-so-far")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1386,7 +1557,7 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">4 Items</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("hp-mp-bugs-status")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("hp-mp-bugs-status")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1395,7 +1566,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("current-status")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("current-status")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>2</span>
                             <div>
@@ -1404,7 +1575,7 @@ export default function Home() {
                             </div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => setActiveTab("new-ticket")}>
+                        <button type="button" className="btn btn-light border text-start p-3" onClick={() => navigateToTab("new-ticket")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>3</span>
                             <div>
@@ -1434,7 +1605,7 @@ export default function Home() {
                         <h2 className="h5 fw-bold mb-0">{"\uD83D\uDCC4"} Documentation</h2>
                         <span className="badge bg-primary-subtle text-primary">Docs</span>
                       </div>
-                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("indiamart-bug-guidelines")}>
+                      <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("indiamart-bug-guidelines")}>
                         <div className="d-flex gap-3">
                           <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                           <div>
@@ -1455,13 +1626,13 @@ export default function Home() {
                         <span className="badge bg-primary-subtle text-primary">1 Step</span>
                       </div>
                       <div className="d-grid gap-2">
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("watch-how-it-works-sprint")}>
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("watch-how-it-works-sprint")}>
                           <div>
                             <div className="fw-bold fst-italic">Watch How It Works</div>
                             <div className="small text-muted">See how the sprint automation works in action</div>
                           </div>
                         </button>
-                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => setActiveTab("add-ticket-to-sprint")}>
+                        <button type="button" className="btn btn-light border text-start p-3 w-100" onClick={() => navigateToTab("add-ticket-to-sprint")}>
                           <div className="d-flex gap-3">
                             <span className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style={{ width: "28px", height: "28px" }}>1</span>
                             <div>
@@ -1471,6 +1642,37 @@ export default function Home() {
                           </div>
                         </button>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12 col-lg-6">
+                  <div className="card border shadow-sm h-100">
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h2 className="h5 fw-bold mb-0">{"\u2699"} Android Build Automation</h2>
+                        <span className="badge bg-primary-subtle text-primary">1 Step</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-light border text-start p-3 w-100"
+                        onClick={() => navigateToTab("play-store-release-automation")}
+                      >
+                        <div className="d-flex gap-3">
+                          <span
+                            className="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                            style={{ width: "28px", height: "28px" }}
+                          >
+                            1
+                          </span>
+                          <div>
+                            <div className="fw-semibold">Play Store Release Automation</div>
+                            <div className="small text-muted">
+                              Access the full Android build and release automation suite
+                            </div>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1894,7 +2096,7 @@ export default function Home() {
                       <button
                         type="button"
                         className="btn btn-link p-0 align-baseline link-primary text-decoration-underline"
-                        onClick={() => setActiveTab("indiamart-bug-guidelines")}
+                        onClick={() => navigateToTab("indiamart-bug-guidelines")}
                       >
                         click here
                       </button>
@@ -2677,6 +2879,185 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "play-store-release-automation" ? (
+            <div
+              className="card shadow-lg p-4 p-md-5"
+              style={{ width: "100%", borderRadius: "20px", minHeight: "100%" }}
+            >
+              <h1 className="mb-4 fw-bold text-primary text-center">
+                Play Store Release Automation
+              </h1>
+
+              <div className="d-grid gap-4">
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      What is this?
+                    </h2>
+                    <p className="mb-0">
+                      The Android Build Automation suite lets you trigger GitLab CI/CD
+                      pipelines directly from your browser - no terminal, no manual steps.
+                      From updating the version code to publishing a release on the Play
+                      Store, everything is automated and trackable in one place.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      What can this automation do?
+                    </h2>
+                    <div className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDD22"}</span>
+                            <div>
+                              <div className="fw-semibold">Change Version Code</div>
+                              <small className="text-muted">
+                                Update the app version code without a manual commit
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDCE6"}</span>
+                            <div>
+                              <div className="fw-semibold">Create the Build (APK)</div>
+                              <small className="text-muted">
+                                Generate a release APK ready for distribution
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDD25"}</span>
+                            <div>
+                              <div className="fw-semibold">Create Build &amp; Upload to Firebase</div>
+                              <small className="text-muted">
+                                Build APK and instantly distribute via Firebase App Distribution
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDCF1"}</span>
+                            <div>
+                              <div className="fw-semibold">Create Bundle (AAB)</div>
+                              <small className="text-muted">
+                                Generate an Android App Bundle for Play Store submission
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDE80"}</span>
+                            <div>
+                              <div className="fw-semibold">
+                                Create Bundle &amp; Upload to Play Store (Internal)
+                              </div>
+                              <small className="text-muted">
+                                Build AAB and push directly to the internal testing track
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="p-3 rounded-3 h-100 border" style={{ background: "#f8f9fc", borderColor: "#e2e8f0" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83E\uDDEA"}</span>
+                            <div>
+                              <div className="fw-semibold">
+                                Create Bundle &amp; Upload to Play Store (Beta)
+                              </div>
+                              <small className="text-muted">
+                                Build AAB and push directly to the beta testing track
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card border shadow-sm">
+                  <div className="card-body p-4 p-md-5">
+                    <h2 className="h5 fw-bold mb-3" style={{ color: "#4f46e5" }}>
+                      Who can use this?
+                    </h2>
+                    <div className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <div className="rounded-4 h-100 p-4" style={{ background: "#eef2ff" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDC68\u200D\uD83D\uDCBB"}</span>
+                            <div>
+                              <div className="fw-semibold mb-2">Developers</div>
+                              <p className="mb-0 text-muted">
+                                Trigger builds at any stage of development - test APKs on
+                                Firebase, validate bundles, or bump the version code before a
+                                release without leaving your browser.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <div className="rounded-4 h-100 p-4" style={{ background: "#f5f3ff" }}>
+                          <div className="d-flex align-items-start gap-3">
+                            <span style={{ fontSize: 28 }}>{"\uD83D\uDE80"}</span>
+                            <div>
+                              <div className="fw-semibold mb-2">Release Managers</div>
+                              <p className="mb-0 text-muted">
+                                Manage the full release pipeline end to end - from internal
+                                testing to beta rollout on the Play Store - with full visibility
+                                into pipeline status and one-click triggers.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card border shadow-sm mx-auto" style={{ maxWidth: "820px" }}>
+                  <div className="card-body p-4 p-md-5 text-center">
+                    <p className="mb-4 text-muted">
+                      Ready to get started? The full Build Automation Dashboard is available on
+                      the dedicated page.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="btn btn-lg text-white fw-semibold px-5"
+                      style={{
+                        background: "linear-gradient(135deg, #667eea, #764ba2)",
+                        border: "none",
+                        borderRadius: "10px",
+                      }}
+                      onClick={() => router.push("/build_automation")}
+                    >
+                      Take Me There
+                    </button>
                   </div>
                 </div>
               </div>
