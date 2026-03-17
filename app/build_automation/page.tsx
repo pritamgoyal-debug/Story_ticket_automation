@@ -5,9 +5,9 @@ import { useState, useEffect } from "react";
 const BUILD_OPTIONS = [
   {
     id: 1,
-    label: "Change Version Code",
+    label: "Change Version",
     action: "",
-    description: "Update the app version code",
+    description: "Update the app version code and/or version name",
     icon: "🔢",
   },
   {
@@ -57,6 +57,12 @@ export default function BuildAutomationPage() {
   const [branch, setBranch] = useState("");
   const [selectedAction, setSelectedAction] = useState<number | null>(null);
   const [versionCode, setVersionCode] = useState("");
+  const [versionName, setVersionName] = useState("");
+  const [currentVersion, setCurrentVersion] = useState<{
+    versionCode: string | null;
+    versionName: string | null;
+  } | null>(null);
+  const [fetchingVersion, setFetchingVersion] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -99,6 +105,37 @@ export default function BuildAutomationPage() {
     setPassword("");
     setToken("");
   };
+
+  const fetchCurrentVersion = async (branchName: string) => {
+    if (!branchName.trim()) {
+      setCurrentVersion(null);
+      return;
+    }
+    setFetchingVersion(true);
+    try {
+      const res = await fetch(`/api/version?branch=${encodeURIComponent(branchName)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentVersion({ versionCode: data.versionCode, versionName: data.versionName });
+      } else {
+        setCurrentVersion(null);
+      }
+    } catch {
+      setCurrentVersion(null);
+    } finally {
+      setFetchingVersion(false);
+    }
+  };
+
+  // Fetch current version when action 1 is selected and branch changes
+  useEffect(() => {
+    if (selectedAction === 1 && branch.trim()) {
+      const timeout = setTimeout(() => fetchCurrentVersion(branch), 500);
+      return () => clearTimeout(timeout);
+    } else {
+      setCurrentVersion(null);
+    }
+  }, [selectedAction, branch]);
 
   const getPollingDelay = (actionId: number | null): number => {
     if (actionId === 1) return 0; // Version code change — poll immediately
@@ -199,9 +236,9 @@ export default function BuildAutomationPage() {
       return;
     }
 
-    // Validate version code when "Change Version Code" is selected
-    if (selectedAction === 1 && !versionCode.trim()) {
-      setResult({ success: false, message: "Please enter a new version code." });
+    // Validate at least one version field when "Change Version" is selected
+    if (selectedAction === 1 && !versionCode.trim() && !versionName.trim()) {
+      setResult({ success: false, message: "Please enter a new version code or version name (or both)." });
       return;
     }
 
@@ -217,8 +254,13 @@ export default function BuildAutomationPage() {
       formData.append("ref", branch);
 
       if (selectedAction === 1) {
-        // Version code change
-        formData.append("variables[NEW_VERSION_CODE]", versionCode);
+        // Version change
+        if (versionCode.trim()) {
+          formData.append("variables[NEW_VERSION_CODE]", versionCode);
+        }
+        if (versionName.trim()) {
+          formData.append("variables[NEW_VERSION_NAME]", versionName);
+        }
         formData.append("variables[BUMP_VERSION]", "true");
       } else {
         // Build actions
@@ -447,23 +489,83 @@ export default function BuildAutomationPage() {
           </div>
         </div>
 
-        {/* Version Code Input (shown when option 1 is selected) */}
+        {/* Version Change UI (shown when option 1 is selected) */}
         {selectedAction === 1 && (
           <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 12, background: "#fff" }}>
             <div className="card-body p-4">
               <h6 className="fw-bold mb-3" style={{ color: "#4f46e5" }}>
-                Version Code
+                Version Settings
               </h6>
+
+              {/* Current Version Display */}
+              <div
+                className="rounded-3 p-3 mb-4"
+                style={{ background: "#f8f9fc", border: "1px solid #e2e8f0" }}
+              >
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <span className="fw-semibold small" style={{ color: "#64748b" }}>
+                    Current Version
+                  </span>
+                  {fetchingVersion && (
+                    <span className="spinner-border spinner-border-sm text-primary" role="status" />
+                  )}
+                  {!fetchingVersion && branch.trim() && (
+                    <button
+                      className="btn btn-sm btn-outline-secondary py-0 px-2"
+                      style={{ fontSize: 11, borderRadius: 6 }}
+                      onClick={() => fetchCurrentVersion(branch)}
+                    >
+                      Refresh
+                    </button>
+                  )}
+                </div>
+                {!branch.trim() ? (
+                  <p className="text-muted small mb-0">Enter a branch name above to fetch current version.</p>
+                ) : fetchingVersion ? (
+                  <p className="text-muted small mb-0">Fetching from branch: {branch}...</p>
+                ) : currentVersion ? (
+                  <div className="d-flex gap-4">
+                    <div>
+                      <span className="small text-muted">Version Code:</span>{" "}
+                      <span className="fw-bold" style={{ color: "#1a1a2e" }}>
+                        {currentVersion.versionCode ?? "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="small text-muted">Version Name:</span>{" "}
+                      <span className="fw-bold" style={{ color: "#1a1a2e" }}>
+                        {currentVersion.versionName ?? "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted small mb-0">Could not fetch version info. Check the branch name.</p>
+                )}
+              </div>
+
+              {/* New Version Inputs */}
               <div className="row g-3">
                 <div className="col-md-6">
                   <label className="form-label small fw-semibold">New Version Code</label>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="e.g. 101, 2.0.1"
+                    placeholder={currentVersion?.versionCode ? `Current: ${currentVersion.versionCode}` : "e.g. 101"}
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
                   />
+                  <small className="text-muted">Leave empty to keep unchanged</small>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label small fw-semibold">New Version Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder={currentVersion?.versionName ? `Current: ${currentVersion.versionName}` : "e.g. 2.0.1"}
+                    value={versionName}
+                    onChange={(e) => setVersionName(e.target.value)}
+                  />
+                  <small className="text-muted">Leave empty to keep unchanged</small>
                 </div>
               </div>
             </div>
